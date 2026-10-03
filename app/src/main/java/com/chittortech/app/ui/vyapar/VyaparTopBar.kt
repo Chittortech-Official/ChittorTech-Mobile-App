@@ -69,33 +69,42 @@ fun VyaparTopBar(
                 )
             }
 
-            // Right: Notification Bell with Badge
-            IconButton(
-                onClick = onNotificationClick,
-                modifier = Modifier.size(36.dp)
+            // Right: Responsive Notification Bell with Non-Clipped Badge
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = onNotificationClick),
+                contentAlignment = Alignment.Center
             ) {
-                BadgedBox(
-                    badge = {
-                        if (notificationCount > 0) {
-                            Badge(
-                                containerColor = VyaparRed,
-                                contentColor = Color.White
-                            ) {
-                                Text(
-                                    text = "$notificationCount",
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
+                Icon(
+                    imageVector = Icons.Outlined.Notifications,
+                    contentDescription = "Notifications",
+                    tint = Color(0xFF334155),
+                    modifier = Modifier.size(24.dp)
+                )
+
+                if (notificationCount > 0) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = (-3).dp, y = 3.dp)
+                            .defaultMinSize(minWidth = 18.dp, minHeight = 18.dp)
+                            .clip(CircleShape)
+                            .background(VyaparRed)
+                            .padding(horizontal = 4.dp, vertical = 1.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (notificationCount > 99) "99+" else "$notificationCount",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            lineHeight = 11.sp,
+                            maxLines = 1
+                        )
                     }
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Notifications,
-                        contentDescription = "Notifications",
-                        tint = Color(0xFF475569),
-                        modifier = Modifier.size(24.dp)
-                    )
                 }
             }
         }

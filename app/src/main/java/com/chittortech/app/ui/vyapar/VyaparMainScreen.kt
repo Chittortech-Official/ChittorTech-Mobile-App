@@ -180,7 +180,7 @@ fun VyaparMainScreen(
                         NotificationCardItem(
                             title = "💼 Tech Stack Consultation",
                             time = "2 days ago",
-                            detail = "Book a free 15-minute tech audit with Kush & Lav Sharma via the ChittorTech agency portal.",
+                            detail = "Book a free 15-minute architecture and tech audit with our engineering team via the ChittorTech agency portal.",
                             isUnread = false
                         )
                     }
