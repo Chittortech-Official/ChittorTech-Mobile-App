@@ -45,6 +45,8 @@ fun VyaparMenuScreen(
 
     var growBusinessExpanded by remember { mutableStateOf(true) }
     var helpSupportExpanded by remember { mutableStateOf(true) }
+    var showFounderEmailChooser by remember { mutableStateOf(false) }
+    var showOfficialEmailChooser by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = modifier
@@ -132,28 +134,40 @@ fun VyaparMenuScreen(
                                 subtitle = "Sub-500ms Groq LPUs, vector databases & chatbots",
                                 icon = Icons.Outlined.SmartToy,
                                 iconColor = Color(0xFF0284C7),
-                                onClick = onExpensesClick
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://chittortech.in/ai-chatbot-development"))
+                                    context.startActivity(intent)
+                                }
                             )
                             MenuItemRow(
                                 title = "Google Play 12-Tester Publishing",
                                 subtitle = "100% production approval guarantee with real testers",
                                 icon = Icons.Outlined.RocketLaunch,
                                 iconColor = Color(0xFFD97706),
-                                onClick = onExpensesClick
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://chittortech.in/google-play-publishing"))
+                                    context.startActivity(intent)
+                                }
                             )
                             MenuItemRow(
                                 title = "Mobile App & Web Development",
                                 subtitle = "Native Kotlin/iOS & Next.js SaaS platforms",
                                 icon = Icons.Outlined.PhoneAndroid,
                                 iconColor = Color(0xFF16A34A),
-                                onClick = onExpensesClick
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://chittortech.in/android-application"))
+                                    context.startActivity(intent)
+                                }
                             )
                             MenuItemRow(
                                 title = "Custom ERP & CRM Systems",
                                 subtitle = "Smart billing, multi-store inventory & lead pipelines",
                                 icon = Icons.Outlined.ReceiptLong,
                                 iconColor = Color(0xFF7C3AED),
-                                onClick = onExpensesClick
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://chittortech.in/erp"))
+                                    context.startActivity(intent)
+                                }
                             )
                             MenuItemRow(
                                 title = "Government & Startup Compliance",
@@ -213,14 +227,18 @@ fun VyaparMenuScreen(
                                 }
                             )
                             MenuItemRow(
-                                title = "Email Inquiries",
-                                subtitle = "business@chittortech.in",
+                                title = "Official Email Inquiries",
+                                subtitle = "business@chittortech.in • contact@chittortech.in • chittortech@gmail.com",
                                 icon = Icons.Outlined.Email,
                                 iconColor = Color(0xFFEA580C),
-                                onClick = {
-                                    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:business@chittortech.in"))
-                                    context.startActivity(intent)
-                                }
+                                onClick = { showOfficialEmailChooser = true }
+                            )
+                            MenuItemRow(
+                                title = "Founders' Direct Emails",
+                                subtitle = "Kushsharma.cor@gmail.com • Lavshama.cor@gmail.com",
+                                icon = Icons.Outlined.SupervisorAccount,
+                                iconColor = Color(0xFF7C3AED),
+                                onClick = { showFounderEmailChooser = true }
                             )
                             MenuItemRow(
                                 title = "Official Website",
@@ -310,6 +328,28 @@ fun VyaparMenuScreen(
             }
         }
     }
+
+    if (showFounderEmailChooser) {
+        FounderEmailChooserDialog(
+            onDismiss = { showFounderEmailChooser = false },
+            onSelect = { emailUri ->
+                showFounderEmailChooser = false
+                val intent = Intent(Intent.ACTION_SENDTO, Uri.parse(emailUri))
+                context.startActivity(intent)
+            }
+        )
+    }
+
+    if (showOfficialEmailChooser) {
+        OfficialEmailChooserDialog(
+            onDismiss = { showOfficialEmailChooser = false },
+            onSelect = { emailUri ->
+                showOfficialEmailChooser = false
+                val intent = Intent(Intent.ACTION_SENDTO, Uri.parse(emailUri))
+                context.startActivity(intent)
+            }
+        )
+    }
 }
 
 // ── Menu Section Header ───────────────────────────────────────────────────────
@@ -383,5 +423,205 @@ private fun MenuItemRow(
             tint = Color(0xFFCBD5E1),
             modifier = Modifier.size(13.dp)
         )
+    }
+}
+
+// ── Founder Email Chooser Dialog ──────────────────────────────────────────────
+@Composable
+private fun FounderEmailChooserDialog(
+    onDismiss: () -> Unit,
+    onSelect: (String) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFFF3E8FF),
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.SupervisorAccount,
+                        contentDescription = null,
+                        tint = Color(0xFF7C3AED),
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Column {
+                    Text("Direct Founder Contact", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = VyaparDark)
+                    Text("Select founder to email", fontSize = 11.sp, color = Color(0xFF64748B))
+                }
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                EmailOptionCard(
+                    title = "Kush Sharma",
+                    role = "Founder & CEO",
+                    email = "Kushsharma.cor@gmail.com",
+                    iconColor = Color(0xFF0284C7),
+                    onClick = {
+                        onSelect("mailto:Kushsharma.cor@gmail.com?subject=Inquiry%20for%20Kush%20Sharma%20-%20ChittorTech")
+                    }
+                )
+                EmailOptionCard(
+                    title = "Lav Sharma",
+                    role = "Co-Founder & Tech Lead",
+                    email = "Lavshama.cor@gmail.com",
+                    iconColor = Color(0xFF7C3AED),
+                    onClick = {
+                        onSelect("mailto:Lavshama.cor@gmail.com?subject=Inquiry%20for%20Lav%20Sharma%20-%20ChittorTech")
+                    }
+                )
+                EmailOptionCard(
+                    title = "Both Founders (Direct)",
+                    role = "Kush Sharma & Lav Sharma",
+                    email = "Kushsharma.cor@gmail.com • Lavshama.cor@gmail.com",
+                    iconColor = Color(0xFF16A34A),
+                    onClick = {
+                        onSelect("mailto:Kushsharma.cor@gmail.com?cc=Lavshama.cor@gmail.com&subject=ChittorTech%20Executive%20Founder%20Inquiry")
+                    }
+                )
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = Color(0xFF64748B), fontWeight = FontWeight.Bold)
+            }
+        },
+        shape = RoundedCornerShape(20.dp),
+        containerColor = Color.White
+    )
+}
+
+// ── Official Inquiries Chooser Dialog ─────────────────────────────────────────
+@Composable
+private fun OfficialEmailChooserDialog(
+    onDismiss: () -> Unit,
+    onSelect: (String) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFFFFEDD5),
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Email,
+                        contentDescription = null,
+                        tint = Color(0xFFEA580C),
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Column {
+                    Text("Official Email Inquiries", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = VyaparDark)
+                    Text("Choose communication channel", fontSize = 11.sp, color = Color(0xFF64748B))
+                }
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                EmailOptionCard(
+                    title = "Business & Partnerships",
+                    role = "Commercial & Enterprise Proposals",
+                    email = "business@chittortech.in",
+                    iconColor = Color(0xFFEA580C),
+                    onClick = {
+                        onSelect("mailto:business@chittortech.in?subject=ChittorTech%20Business%20Partnership%20Inquiry")
+                    }
+                )
+                EmailOptionCard(
+                    title = "General & Client Contact",
+                    role = "Customer & Support Inquiries",
+                    email = "contact@chittortech.in",
+                    iconColor = Color(0xFF0284C7),
+                    onClick = {
+                        onSelect("mailto:contact@chittortech.in?subject=ChittorTech%20General%20Contact")
+                    }
+                )
+                EmailOptionCard(
+                    title = "Primary Google Inbox",
+                    role = "Direct Communication",
+                    email = "chittortech@gmail.com",
+                    iconColor = Color(0xFFDC2626),
+                    onClick = {
+                        onSelect("mailto:chittortech@gmail.com?subject=ChittorTech%20Direct%20Inquiry")
+                    }
+                )
+                EmailOptionCard(
+                    title = "All Official Desks",
+                    role = "business + contact + chittortech@gmail",
+                    email = "Combined Dispatch",
+                    iconColor = Color(0xFF16A34A),
+                    onClick = {
+                        onSelect("mailto:business@chittortech.in?cc=contact@chittortech.in,chittortech@gmail.com&subject=ChittorTech%20Official%20Inquiry")
+                    }
+                )
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = Color(0xFF64748B), fontWeight = FontWeight.Bold)
+            }
+        },
+        shape = RoundedCornerShape(20.dp),
+        containerColor = Color.White
+    )
+}
+
+@Composable
+private fun EmailOptionCard(
+    title: String,
+    role: String,
+    email: String,
+    iconColor: Color,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = Color(0xFFF8FAFC),
+        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(iconColor.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Email,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(17.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VyaparDark)
+                Text(text = role, fontSize = 10.sp, color = Color(0xFF64748B))
+                Text(text = email, fontSize = 11.sp, color = iconColor, fontWeight = FontWeight.Medium)
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                contentDescription = null,
+                tint = Color(0xFF94A3B8),
+                modifier = Modifier.size(12.dp)
+            )
+        }
     }
 }

@@ -629,11 +629,11 @@ fun ChittorTechServicesScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
-                                Brush.verticalGradient(
+                                Brush.linearGradient(
                                     colors = listOf(
-                                        Color(0xFF0F172A), // Slate 900
-                                        Color(0xFF1E293B), // Slate 800
-                                        Color(0xFF0369A1)  // Ocean Blue
+                                        Color(0xFF0EA5E9), // Soft Sky Blue
+                                        Color(0xFF38BDF8), // Radiant Sky
+                                        Color(0xFF7DD3FC)  // Light Airy Blue
                                     )
                                 )
                             )
@@ -670,15 +670,15 @@ fun ChittorTechServicesScreen(
                                         Text(
                                             text = "chittortech.in",
                                             fontSize = 12.sp,
-                                            color = Color(0xFF38BDF8)
+                                            color = Color.White.copy(alpha = 0.9f)
                                         )
                                     }
                                 }
 
                                 Surface(
                                     shape = RoundedCornerShape(20.dp),
-                                    color = Color(0xFF10B981).copy(alpha = 0.2f),
-                                    border = BorderStroke(1.dp, Color(0xFF10B981))
+                                    color = Color.White,
+                                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.8f))
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
@@ -688,14 +688,14 @@ fun ChittorTechServicesScreen(
                                             modifier = Modifier
                                                 .size(6.dp)
                                                 .clip(CircleShape)
-                                                .background(Color(0xFF10B981))
+                                                .background(Color(0xFF0284C7))
                                         )
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
                                             text = "OFFICIAL CATALOG",
                                             fontSize = 9.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF34D399)
+                                            fontWeight = FontWeight.ExtraBold,
+                                            color = Color(0xFF0284C7)
                                         )
                                     }
                                 }
@@ -714,7 +714,7 @@ fun ChittorTechServicesScreen(
                             Text(
                                 text = "Every service features a dedicated architectural page, deliverables breakdown, and real client FAQs. Tap any card below to explore.",
                                 fontSize = 12.sp,
-                                color = Color(0xFFCBD5E1),
+                                color = Color.White.copy(alpha = 0.9f),
                                 lineHeight = 17.sp
                             )
 
@@ -789,7 +789,7 @@ fun ChittorTechServicesScreen(
                                 )
                             },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = VyaparBlue,
+                                selectedContainerColor = Color(0xFF0284C7),
                                 selectedLabelColor = Color.White,
                                 containerColor = Color.White,
                                 labelColor = VyaparDark
@@ -798,7 +798,7 @@ fun ChittorTechServicesScreen(
                                 enabled = true,
                                 selected = (selectedCategory == category),
                                 borderColor = Color(0xFFE2E8F0),
-                                selectedBorderColor = VyaparBlue,
+                                selectedBorderColor = Color(0xFF0284C7),
                                 borderWidth = 1.dp
                             ),
                             shape = RoundedCornerShape(20.dp)
@@ -1055,7 +1055,7 @@ private fun ServiceCard(
                 Button(
                     onClick = onEnquire,
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = VyaparBlue),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7)),
                     modifier = Modifier.weight(1f).height(38.dp)
                 ) {
                     Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, modifier = Modifier.size(14.dp))
@@ -1074,14 +1074,14 @@ private fun StatBadge(value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = value,
-            fontSize = 13.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.ExtraBold,
-            color = Color(0xFF38BDF8)
+            color = Color.White
         )
         Text(
             text = label,
-            fontSize = 9.sp,
-            color = Color(0xFF94A3B8)
+            fontSize = 9.5.sp,
+            color = Color.White.copy(alpha = 0.85f)
         )
     }
 }
@@ -1198,7 +1198,7 @@ private fun ServiceInquiryDialog(
                 },
                 enabled = phone.isNotBlank() && !isSubmitting,
                 shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = VyaparBlue)
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7))
             ) {
                 if (isSubmitting) {
                     CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)

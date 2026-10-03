@@ -59,9 +59,9 @@ fun LoginScreen(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xFF0F172A), // Slate 900
-                            Color(0xFF0369A1), // Ocean Dark
-                            CtPrimaryBlue      // Ocean Blue
+                            Color(0xFF0284C7), // ChittorTech Brand Blue
+                            Color(0xFF0EA5E9), // Light Sky Blue
+                            Color(0xFF38BDF8)  // Radiant Sky
                         )
                     )
                 )
@@ -105,8 +105,8 @@ fun LoginScreen(
                     modifier = Modifier
                         .size(56.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF0F172A))
-                        .border(2.dp, Color(0xFF38BDF8), CircleShape),
+                        .background(Color.White)
+                        .border(2.dp, Color.White, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
@@ -215,10 +215,10 @@ fun LoginScreen(
                             ) {
                                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     GuestFeatureRow("✨ Browse full ChittorTech Services Catalog")
-                                    GuestFeatureRow("📊 Test Quick Launch Vyapar Billing & Sales features")
-                                    GuestFeatureRow("🤖 AI Chatbot with Kaira & Groq LPU sub-500ms answers")
-                                    GuestFeatureRow("🚀 1-Tap WhatsApp connect with Founder & Tech Leads")
-                                    GuestFeatureRow("💼 Request Free 15-Minute Project & Tech Consultation")
+                                    GuestFeatureRow("🤖 AI Chatbot with ChittorTech GPT")
+                                    GuestFeatureRow("⚡ One-Tap Instant Access to all Engineering Capabilities")
+                                    GuestFeatureRow("🚀 1-Tap Direct WhatsApp Connect with Tech Leads")
+                                    GuestFeatureRow("💼 Request Free Project & Architecture Consultation")
                                 }
                             }
 
@@ -327,32 +327,9 @@ fun LoginScreen(
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            // Instant Client Demo Access Button
-                            OutlinedButton(
-                                onClick = {
-                                    onDirectRoleAccess(
-                                        "client",
-                                        CtUser(
-                                            uid = "demo_client_amplr",
-                                            email = "client@amplrhealth.com",
-                                            displayName = "AMPLR Health Enterprise",
-                                            companyName = "AMPLR Health Services",
-                                            role = "client",
-                                            phone = "+91 79978 88448"
-                                        )
-                                    )
-                                },
-                                modifier = Modifier.fillMaxWidth().height(44.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                border = BorderStroke(1.dp, CtPrimaryBlue)
-                            ) {
-                                Text("Instant Client Preview (AMPLR Health)", color = CtPrimaryBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            }
                         }
 
-                        // ── 2. ADMIN / FOUNDER LOGIN ──────────────────────────
+                        // ── 3. ADMIN PORTAL LOGIN ─────────────────────────────
                         LoginRoleTab.ADMIN -> {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Surface(
@@ -363,8 +340,8 @@ fun LoginScreen(
                                     Icon(Icons.Default.AdminPanelSettings, contentDescription = null, tint = Color(0xFFD97706), modifier = Modifier.padding(6.dp).size(20.dp))
                                 }
                                 Column {
-                                    Text("Founder Command Center", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                                    Text("Kush Sharma & Lav Sharma (Founder & Tech Lead)", fontSize = 11.sp, color = TextSecondary)
+                                    Text("Administrator Portal", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                                    Text("Authorized Administrative Access", fontSize = 11.sp, color = TextSecondary)
                                 }
                             }
 
@@ -373,8 +350,8 @@ fun LoginScreen(
                             OutlinedTextField(
                                 value = email,
                                 onValueChange = { email = it },
-                                label = { Text("Founder Email (kush@chittortech.in)") },
-                                placeholder = { Text("kush@chittortech.in") },
+                                label = { Text("Admin Email (admin@chittortech.in)") },
+                                placeholder = { Text("admin@chittortech.in") },
                                 leadingIcon = { Icon(Icons.Default.Security, contentDescription = null, tint = Color(0xFFD97706)) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                                 singleLine = true,
@@ -426,32 +403,8 @@ fun LoginScreen(
                                 } else {
                                     Icon(Icons.Default.VerifiedUser, contentDescription = null, tint = Color.White)
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Sign In as Founder / Admin", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                                    Text("Sign In to Admin Portal", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                                 }
-                            }
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            // Instant Founder 1-Tap Access Button
-                            OutlinedButton(
-                                onClick = {
-                                    onDirectRoleAccess(
-                                        "admin",
-                                        CtUser(
-                                            uid = "founder_kush",
-                                            email = "kush@chittortech.in",
-                                            displayName = "Kush Sharma",
-                                            companyName = "ChittorTech Solutions",
-                                            role = "admin",
-                                            phone = "+91 75974 51057"
-                                        )
-                                    )
-                                },
-                                modifier = Modifier.fillMaxWidth().height(44.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                border = BorderStroke(1.dp, Color(0xFFD97706))
-                            ) {
-                                Text("Instant Founder Mode (Kush Sharma)", color = Color(0xFFB45309), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }

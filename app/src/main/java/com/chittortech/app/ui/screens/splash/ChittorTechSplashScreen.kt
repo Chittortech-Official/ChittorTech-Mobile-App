@@ -72,10 +72,10 @@ fun ChittorTechSplashScreen(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF030712), // Gray 950
-                        Color(0xFF0B132B), // Deep Slate Navy
-                        Color(0xFF0F172A), // Slate 900
-                        Color(0xFF0369A1)  // Ocean Blue Glow
+                        Color(0xFFF0F9FF), // Sky 50 Light
+                        Color(0xFFE0F2FE), // Sky 100
+                        Color(0xFFBAE6FD), // Sky 200
+                        Color(0xFFF0F9FF)  // Soft Sky White
                     )
                 )
             )
@@ -104,23 +104,23 @@ fun ChittorTechSplashScreen(
                         .size(180.dp)
                         .scale(pulseGlow)
                         .clip(CircleShape)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(
-                                    Color(0xFF00D2FF).copy(alpha = 0.35f),
-                                    Color(0xFF0284C7).copy(alpha = 0.15f),
-                                    Color.Transparent
-                                )
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFF0284C7).copy(alpha = 0.25f),
+                                Color(0xFF38BDF8).copy(alpha = 0.12f),
+                                Color.Transparent
                             )
                         )
+                    )
                 )
 
                 // Outer Card with border
                 Card(
                     shape = RoundedCornerShape(28.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
-                    border = BorderStroke(2.dp, Brush.linearGradient(listOf(Color(0xFF38BDF8), Color(0xFF818CF8)))),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(2.dp, Brush.linearGradient(listOf(Color(0xFF38BDF8), Color(0xFF0284C7)))),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
                     modifier = Modifier.size(165.dp)
                 ) {
                     Image(
@@ -134,9 +134,9 @@ fun ChittorTechSplashScreen(
                 // AI Innovation Floating Badge
                 Surface(
                     shape = RoundedCornerShape(20.dp),
-                    color = Color(0xFF0F172A),
-                    border = BorderStroke(1.dp, Color(0xFF38BDF8)),
-                    shadowElevation = 8.dp,
+                    color = Color.White,
+                    border = BorderStroke(1.dp, Color(0xFF0284C7)),
+                    shadowElevation = 6.dp,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .offset(x = (-4).dp, y = (-4).dp)
@@ -148,7 +148,7 @@ fun ChittorTechSplashScreen(
                         Icon(
                             imageVector = Icons.Default.AutoAwesome,
                             contentDescription = null,
-                            tint = Color(0xFF38BDF8),
+                            tint = Color(0xFF0284C7),
                             modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -156,7 +156,7 @@ fun ChittorTechSplashScreen(
                             text = "AI CORE",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFFE0F2FE),
+                            color = Color(0xFF0284C7),
                             letterSpacing = 0.5.sp
                         )
                     }
@@ -173,7 +173,9 @@ fun ChittorTechSplashScreen(
                 Surface(
                     shape = RoundedCornerShape(10.dp),
                     color = Color.White,
-                    modifier = Modifier.size(36.dp)
+                    border = BorderStroke(1.dp, Color(0xFFBAE6FD)),
+                    shadowElevation = 4.dp,
+                    modifier = Modifier.size(40.dp)
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.chittortech_logo),
@@ -188,7 +190,7 @@ fun ChittorTechSplashScreen(
                     text = "ChittorTech",
                     fontSize = 26.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = Color.White,
+                    color = Color(0xFF0F172A),
                     letterSpacing = 0.5.sp
                 )
             }
@@ -198,8 +200,8 @@ fun ChittorTechSplashScreen(
             Text(
                 text = "Enterprise AI · Cloud Architecture · Custom Software",
                 fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFF93C5FD),
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF0284C7),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 24.dp)
             )
@@ -209,8 +211,9 @@ fun ChittorTechSplashScreen(
             // ── Holographic Status Pill ─────────────────────────────────────────
             Surface(
                 shape = RoundedCornerShape(24.dp),
-                color = Color.White.copy(alpha = 0.08f),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
+                color = Color.White,
+                border = BorderStroke(1.dp, Color(0xFFBAE6FD)),
+                shadowElevation = 4.dp
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -218,15 +221,15 @@ fun ChittorTechSplashScreen(
                 ) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(14.dp),
-                        color = Color(0xFF38BDF8),
+                        color = Color(0xFF0284C7),
                         strokeWidth = 2.dp
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "INITIALIZING INTELLIGENT SYSTEMS...",
+                        text = "POWERING DIGITAL TRANSFORMATION...",
                         fontSize = 10.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFFE2E8F0),
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0369A1),
                         letterSpacing = 0.8.sp
                     )
                 }
@@ -248,12 +251,12 @@ fun ChittorTechSplashScreen(
                 Text(
                     text = "Tap anywhere to skip",
                     fontSize = 11.sp,
-                    color = Color.White.copy(alpha = 0.5f)
+                    color = Color(0xFF64748B)
                 )
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
                     contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.5f),
+                    tint = Color(0xFF64748B),
                     modifier = Modifier.size(14.dp)
                 )
             }
@@ -262,7 +265,7 @@ fun ChittorTechSplashScreen(
                 text = "ChittorTech © 2026 • chittortech.in",
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color.White.copy(alpha = 0.35f)
+                color = Color(0xFF94A3B8)
             )
         }
     }

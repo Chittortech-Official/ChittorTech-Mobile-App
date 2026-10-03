@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -83,18 +84,21 @@ fun VyaparHomeScreen(
     // ── Frameworks List (from chittortech.in technologies.json) ───────────────
     val frameworks = remember {
         listOf(
+            TechStackItem("JavaScript", "Modern ES2024", Icons.Outlined.Javascript, Color(0xFFEAB308), Color(0xFFFEFCE8)),
+            TechStackItem("TypeScript", "Strict Type Safety", Icons.Outlined.Code, Color(0xFF3178C6), Color(0xFFEFF6FF)),
             TechStackItem("Kotlin", "Android Native", Icons.Outlined.PhoneAndroid, Color(0xFF7F52FF), Color(0xFFF3E8FF)),
             TechStackItem("Compose", "Material 3 UI", Icons.Outlined.Widgets, Color(0xFF4285F4), Color(0xFFEFF6FF)),
             TechStackItem("Next.js 15", "App Router & SSR", Icons.Outlined.Web, Color(0xFF0F172A), Color(0xFFF1F5F9)),
-            TechStackItem("TypeScript", "Strict Type Safety", Icons.Outlined.Code, Color(0xFF3178C6), Color(0xFFEFF6FF)),
-            TechStackItem("Groq LPU", "Sub-500ms AI", Icons.Outlined.SmartToy, Color(0xFFF97316), Color(0xFFFFF7ED)),
+            TechStackItem("React", "Frontend Engine", Icons.Outlined.Devices, Color(0xFF0284C7), Color(0xFFE0F2FE)),
+            TechStackItem("Groq LPU", "Sub-500ms AI", Icons.Outlined.SmartToy, Color(0xFFF55036), Color(0xFFFEF2F2)),
             TechStackItem("Python", "RAG & LLM Agents", Icons.Outlined.Terminal, Color(0xFF3776AB), Color(0xFFE0F2FE)),
             TechStackItem("Firebase", "Firestore Cloud", Icons.Outlined.CloudSync, Color(0xFFFFB300), Color(0xFFFEF9C3)),
             TechStackItem("PostgreSQL", "Enterprise DB", Icons.Outlined.Storage, Color(0xFF336791), Color(0xFFE0F2FE)),
             TechStackItem("Docker", "CI/CD & DevOps", Icons.Outlined.Dns, Color(0xFF2496ED), Color(0xFFE0F2FE)),
-            TechStackItem("Cloudflare", "Global Anycast CDN", Icons.Outlined.Shield, Color(0xFFF6821F), Color(0xFFFFF7ED)),
+            TechStackItem("Cloudflare", "Global Edge WAF", Icons.Outlined.Shield, Color(0xFFF38020), Color(0xFFFFF7ED)),
             TechStackItem("Swift (iOS)", "Apple Native", Icons.Outlined.LaptopMac, Color(0xFFF05138), Color(0xFFFFEDD5)),
             TechStackItem("Node.js", "Microservices", Icons.Outlined.DataObject, Color(0xFF339933), Color(0xFFDCFCE7)),
+            TechStackItem("Tailwind", "CSS Utility", Icons.Outlined.Brush, Color(0xFF06B6D4), Color(0xFFECFEFF)),
             TechStackItem("Redis", "In-Memory Cache", Icons.Outlined.Speed, Color(0xFFDC382D), Color(0xFFFEE2E2)),
             TechStackItem("Razorpay", "UPI & Card POS", Icons.Outlined.AccountBalanceWallet, Color(0xFF0C2340), Color(0xFFE0E7FF))
         )
@@ -697,10 +701,10 @@ fun VyaparHomeScreen(
                                 border = BorderStroke(1.dp, Color(0xFFBFDBFE))
                             ) {
                                 Text(
-                                    text = "LIVE ROTATING",
+                                    text = "16+ TECHNOLOGIES",
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF1D4ED8),
+                                    color = Color(0xFF0284C7),
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                 )
                             }
@@ -728,24 +732,15 @@ fun VyaparHomeScreen(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Outlined.Star, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Featured Client Success Stories",
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = VyaparDark
-                                )
-                            }
+                            Icon(Icons.Outlined.Star, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "${clientStories.size} Verified",
-                                fontSize = 11.5.sp,
+                                text = "Featured Client Success Stories",
+                                fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF10B981)
+                                color = VyaparDark
                             )
                         }
 
@@ -1002,60 +997,78 @@ fun VyaparHomeScreen(
     }
 }
 
-// ── Auto-Scrolling Marquee Component ──────────────────────────────────────────
+// ── Auto-Scrolling Marquee Component (Optimized with LazyRow for 0% Lag) ─────
 @Composable
 private fun AutoScrollingTechMarquee(frameworks: List<TechStackItem>) {
-    val scrollState = rememberScrollState()
+    if (frameworks.isEmpty()) return
 
-    // Smooth infinite continuous drift
+    val initialIndex = frameworks.size * 50
+    val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
+
+    // Ultra smooth and lightweight drift, yielding immediately when user touches
     LaunchedEffect(Unit) {
         while (true) {
-            val max = scrollState.maxValue
-            if (max > 0) {
-                val current = scrollState.value
-                val remaining = max - current
-                val duration = (remaining * 35).coerceAtLeast(1000)
-                scrollState.animateScrollTo(
-                    value = max,
-                    animationSpec = tween(durationMillis = duration, easing = LinearEasing)
-                )
-                scrollState.scrollTo(0)
-            } else {
-                delay(100)
+            delay(30)
+            if (!lazyListState.isScrollInProgress) {
+                lazyListState.scrollBy(1.0f)
             }
         }
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(scrollState),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    androidx.compose.foundation.lazy.LazyRow(
+        state = lazyListState,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        // Triple list for smooth infinite loop illusion
-        (frameworks + frameworks + frameworks).forEach { item ->
+        items(count = Int.MAX_VALUE) { index ->
+            val item = frameworks[index % frameworks.size]
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = Color(0xFFF8FAFC),
-                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                modifier = Modifier.width(115.dp)
+                color = Color.White,
+                border = BorderStroke(1.dp, item.iconColor.copy(alpha = 0.25f)),
+                shadowElevation = 1.dp,
+                modifier = Modifier.width(120.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(10.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(38.dp)
                             .clip(CircleShape)
                             .background(item.bgColor),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(item.icon, contentDescription = null, tint = item.iconColor, modifier = Modifier.size(18.dp))
+                        Icon(
+                            imageVector = item.icon,
+                            contentDescription = item.name,
+                            tint = item.iconColor,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(text = item.name, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VyaparDark, maxLines = 1)
-                    Text(text = item.category, fontSize = 10.sp, color = Color(0xFF64748B), maxLines = 1)
+                    Spacer(modifier = Modifier.height(7.dp))
+                    Text(
+                        text = item.name,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = VyaparDark,
+                        maxLines = 1
+                    )
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = item.bgColor
+                    ) {
+                        Text(
+                            text = item.category,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = item.iconColor,
+                            maxLines = 1,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
                 }
             }
         }
