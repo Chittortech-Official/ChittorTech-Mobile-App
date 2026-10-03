@@ -13,6 +13,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -31,6 +33,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chittortech.app.R
@@ -40,7 +43,6 @@ import com.chittortech.app.data.MessageSender
 import com.chittortech.app.theme.*
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChittorTechChatbotScreen(
     modifier: Modifier = Modifier
@@ -57,7 +59,7 @@ fun ChittorTechChatbotScreen(
             listOf(
                 ChatMessage(
                     sender = MessageSender.BOT,
-                    text = "Hello! I'm Kaira, your official ChittorTech AI Assistant. How can I assist your business growth or engineering today? Feel free to ask about our AI solutions, mobile apps, Google Play publishing, or custom software."
+                    text = "Hello! I'm ChittorTech GPT, your official AI Assistant. How can I assist your business growth or engineering today? Feel free to ask about our AI solutions, mobile apps, Google Play publishing, or custom software."
                 )
             )
         )
@@ -65,8 +67,6 @@ fun ChittorTechChatbotScreen(
 
     var inputText by remember { mutableStateOf("") }
     var isTyping by remember { mutableStateOf(false) }
-    var showApiKeyDialog by remember { mutableStateOf(false) }
-    var apiKeyInput by remember { mutableStateOf(groqService.getApiKey()) }
 
     val quickSuggestions = listOf(
         "What is ChittorTech?",
@@ -86,7 +86,6 @@ fun ChittorTechChatbotScreen(
         isTyping = true
 
         scope.launch {
-            // Scroll to bottom
             listState.animateScrollToItem(messages.size)
 
             val botResponseText = groqService.sendMessage(trimmed, messages)
@@ -98,12 +97,20 @@ fun ChittorTechChatbotScreen(
         }
     }
 
+    // Scroll to bottom when keyboard opens
+    LaunchedEffect(messages.size, isTyping) {
+        if (messages.isNotEmpty()) {
+            listState.animateScrollToItem(messages.size)
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFFF8FAFC))
+            .imePadding() // Critical: Automatically moves input bar above virtual keyboard
     ) {
-        // ── 1. Top Kaira Header ───────────────────────────────────────────────
+        // ── 1. Top ChittorTech GPT Header ─────────────────────────────────────
         Surface(
             color = Color.White,
             shadowElevation = 2.dp,
@@ -120,7 +127,7 @@ fun ChittorTechChatbotScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.weight(1f)
                 ) {
-                    // Kaira Avatar with green pulsing live indicator
+                    // ChittorTech GPT Avatar with green pulsing live indicator
                     Box(contentAlignment = Alignment.BottomEnd) {
                         Surface(
                             shape = CircleShape,
@@ -130,7 +137,7 @@ fun ChittorTechChatbotScreen(
                         ) {
                             Image(
                                 painter = painterResource(id = R.drawable.chatbot_kaira),
-                                contentDescription = "Kaira AI Avatar",
+                                contentDescription = "ChittorTech GPT Avatar",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
@@ -149,7 +156,7 @@ fun ChittorTechChatbotScreen(
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "Kaira",
+                                text = "ChittorTech GPT",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF0F172A)
@@ -157,20 +164,20 @@ fun ChittorTechChatbotScreen(
                             Spacer(modifier = Modifier.width(6.dp))
                             Surface(
                                 shape = RoundedCornerShape(4.dp),
-                                color = Color(0xFFFFEDD5),
+                                color = Color(0xFFEFF6FF),
                                 modifier = Modifier.padding(horizontal = 2.dp)
                             ) {
                                 Text(
-                                    text = "AI",
-                                    fontSize = 10.sp,
+                                    text = "OFFICIAL AI",
+                                    fontSize = 9.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = Color(0xFFEA580C),
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                    color = Color(0xFF0284C7),
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                                 )
                             }
                         }
                         Text(
-                            text = if (groqService.getApiKey().isNotBlank()) "Online · Powered by Groq LPU" else "Online · ChittorTech AI",
+                            text = "Online · ChittorTech Intelligence",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color(0xFF10B981)
@@ -178,42 +185,24 @@ fun ChittorTechChatbotScreen(
                     }
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Groq Key Settings Icon
-                    IconButton(
-                        onClick = {
-                            apiKeyInput = groqService.getApiKey()
-                            showApiKeyDialog = true
-                        },
-                        modifier = Modifier.size(34.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Key,
-                            contentDescription = "Configure Groq API Key",
-                            tint = if (groqService.getApiKey().isNotBlank()) Color(0xFF0284C7) else Color(0xFF94A3B8),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    // Reset Chat Icon
-                    IconButton(
-                        onClick = {
-                            messages = listOf(
-                                ChatMessage(
-                                    sender = MessageSender.BOT,
-                                    text = "Hello! I'm Kaira, your official ChittorTech AI Assistant. How can I assist your business growth or engineering today?"
-                                )
+                // Reset Chat Icon
+                IconButton(
+                    onClick = {
+                        messages = listOf(
+                            ChatMessage(
+                                sender = MessageSender.BOT,
+                                text = "Hello! I'm ChittorTech GPT, your official AI Assistant. How can I assist your business growth or engineering today? Feel free to ask about our AI solutions, mobile apps, Google Play publishing, or custom software."
                             )
-                        },
-                        modifier = Modifier.size(34.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.RestartAlt,
-                            contentDescription = "Restart Chat",
-                            tint = Color(0xFF64748B),
-                            modifier = Modifier.size(20.dp)
                         )
-                    }
+                    },
+                    modifier = Modifier.size(34.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.RestartAlt,
+                        contentDescription = "Restart Chat",
+                        tint = Color(0xFF64748B),
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
         }
@@ -310,7 +299,7 @@ fun ChittorTechChatbotScreen(
                     onValueChange = { inputText = it },
                     placeholder = {
                         Text(
-                            text = "Ask Kaira about ChittorTech...",
+                            text = "Ask ChittorTech GPT...",
                             fontSize = 13.sp,
                             color = Color(0xFF94A3B8)
                         )
@@ -319,8 +308,14 @@ fun ChittorTechChatbotScreen(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color(0xFFF8FAFC),
                         unfocusedContainerColor = Color(0xFFF8FAFC),
-                        focusedBorderColor = Color(0xFFEA580C),
+                        focusedBorderColor = Color(0xFF0284C7),
                         unfocusedBorderColor = Color(0xFFE2E8F0)
+                    ),
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Send
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onSend = { sendUserMessage(inputText) }
                     ),
                     maxLines = 3,
                     modifier = Modifier
@@ -337,7 +332,7 @@ fun ChittorTechChatbotScreen(
                         .clip(CircleShape)
                         .background(
                             if (inputText.isNotBlank() && !isTyping)
-                                Brush.linearGradient(listOf(Color(0xFFE06930), Color(0xFFEA580C)))
+                                Brush.linearGradient(listOf(Color(0xFF0284C7), Color(0xFF0369A1)))
                             else
                                 Brush.linearGradient(listOf(Color(0xFFCBD5E1), Color(0xFFCBD5E1)))
                         )
@@ -351,53 +346,6 @@ fun ChittorTechChatbotScreen(
                 }
             }
         }
-    }
-
-    // ── Groq API Key Configuration Dialog ─────────────────────────────────────
-    if (showApiKeyDialog) {
-        AlertDialog(
-            onDismissRequest = { showApiKeyDialog = false },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.VpnKey, contentDescription = null, tint = Color(0xFFEA580C))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Groq API Key Setup", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                }
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(
-                        text = "Enter your Groq API key generated from business@chittortech.in. When provided, Kaira runs on Groq's sub-500ms Llama-3.3-70B model.",
-                        fontSize = 12.sp,
-                        color = Color(0xFF64748B)
-                    )
-                    OutlinedTextField(
-                        value = apiKeyInput,
-                        onValueChange = { apiKeyInput = it },
-                        label = { Text("Groq API Key (gsk_...)") },
-                        placeholder = { Text("gsk_...") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        groqService.saveApiKey(apiKeyInput)
-                        showApiKeyDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEA580C))
-                ) {
-                    Text("Save Key")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showApiKeyDialog = false }) {
-                    Text("Cancel", color = Color(0xFF64748B))
-                }
-            }
-        )
     }
 }
 
@@ -573,9 +521,9 @@ private fun BotTypingBubble() {
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
-                Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFFEA580C).copy(alpha = dot1Alpha)))
-                Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFFEA580C).copy(alpha = dot2Alpha)))
-                Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFFEA580C).copy(alpha = dot3Alpha)))
+                Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF0284C7).copy(alpha = dot1Alpha)))
+                Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF0284C7).copy(alpha = dot2Alpha)))
+                Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF0284C7).copy(alpha = dot3Alpha)))
             }
         }
     }
