@@ -37,6 +37,7 @@ enum class ClientTab(val label: String, val icon: ImageVector) {
 fun ClientMainScreen(
     user: CtUser,
     repository: ChittorTechRepository,
+    onSignOut: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -112,7 +113,10 @@ fun ClientMainScreen(
 
                 ClientTab.PROFILE -> ClientProfileScreen(
                     user     = user,
-                    onLogout = { repository.signOut() }
+                    onLogout = {
+                        repository.signOut()
+                        onSignOut()
+                    }
                 )
             }
         }

@@ -3,11 +3,11 @@ package com.chittortech.app.ui.main
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,23 +30,57 @@ enum class AdminTab(val label: String, val icon: ImageVector) {
 
 // ─── Admin Main Screen ────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminMainScreen(
     user: CtUser,
     repository: ChittorTechRepository,
+    onSignOut: () -> Unit = {},
+    onOpenVyapar: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val scope    = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
     var currentTab by remember { mutableStateOf(AdminTab.DASHBOARD) }
 
     // Firebase live streams
-    val kpi      by repository.observeAdminKpi().collectAsStateWithLifecycle(initialValue = com.chittortech.app.model.AdminKpi())
+    val kpi by repository.observeAdminKpi().collectAsStateWithLifecycle(initialValue = com.chittortech.app.model.AdminKpi())
     val projects by repository.observeAllProjects().collectAsStateWithLifecycle(emptyList())
     val invoices by repository.observeAllInvoices().collectAsStateWithLifecycle(emptyList())
-    val tickets  by repository.observeAllTickets().collectAsStateWithLifecycle(emptyList())
-    val clients  by repository.observeAllClients().collectAsStateWithLifecycle(emptyList())
+    val tickets by repository.observeAllTickets().collectAsStateWithLifecycle(emptyList())
+    val clients by repository.observeAllClients().collectAsStateWithLifecycle(emptyList())
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = "Command Center",
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "${user.displayName.ifBlank { "Founder" }} • ${user.email}",
+                            fontSize = 11.sp,
+                            color = TextSecondary
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onOpenVyapar) {
+                        Icon(Icons.Default.Storefront, contentDescription = "Quick Launch / Services", tint = CtPrimaryBlue)
+                    }
+                    IconButton(onClick = {
+                        repository.signOut()
+                        onSignOut()
+                    }) {
+                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Sign Out", tint = CtRed)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = CtCardWhite)
+            )
+        },
         bottomBar = {
             NavigationBar(
                 containerColor = CtCardWhite,
@@ -79,7 +113,8 @@ fun AdminMainScreen(
             targetState = currentTab,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(padding),
+            label = "AdminTabContent"
         ) { tab ->
             when (tab) {
                 AdminTab.DASHBOARD -> AdminDashboardScreen(

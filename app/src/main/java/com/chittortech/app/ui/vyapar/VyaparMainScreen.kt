@@ -30,6 +30,7 @@ import kotlinx.coroutines.launch
 fun VyaparMainScreen(
     user: CtUser,
     repository: ChittorTechRepository,
+    onSignOut: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val scope = rememberCoroutineScope()
@@ -111,6 +112,7 @@ fun VyaparMainScreen(
                         onHelpdeskClick = {},
                         onSignOut = {
                             repository.signOut()
+                            onSignOut()
                         }
                     )
                 }
