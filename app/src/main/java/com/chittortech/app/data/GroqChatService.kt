@@ -28,7 +28,8 @@ class GroqChatService(private val context: Context) {
     private val prefs = context.getSharedPreferences("chittortech_groq_prefs", Context.MODE_PRIVATE)
 
     fun getApiKey(): String {
-        return prefs.getString("groq_api_key", "").orEmpty()
+        val saved = prefs.getString("groq_api_key", "").orEmpty()
+        return if (saved.isNotBlank()) saved else com.chittortech.app.BuildConfig.GROQ_API_KEY
     }
 
     fun saveApiKey(key: String) {
