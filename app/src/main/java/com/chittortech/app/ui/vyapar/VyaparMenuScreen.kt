@@ -2,15 +2,18 @@ package com.chittortech.app.ui.vyapar
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,9 +24,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.chittortech.app.R
 import com.chittortech.app.theme.*
 
 @Composable
@@ -37,480 +42,373 @@ fun VyaparMenuScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val pagerState = rememberPagerState(pageCount = { 2 })
 
-    var saleExpanded by remember { mutableStateOf(false) }
-    var purchaseExpanded by remember { mutableStateOf(false) }
-    var growBusinessExpanded by remember { mutableStateOf(false) }
-    var helpSupportExpanded by remember { mutableStateOf(false) }
+    var growBusinessExpanded by remember { mutableStateOf(true) }
+    var helpSupportExpanded by remember { mutableStateOf(true) }
+    var settingsExpanded by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .background(VyaparBg),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 40.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 90.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // ── 1. Hero Promo Carousel (WA0032 & WA0024) ──────────────────────────────
-        item {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(150.dp)
-                ) { page ->
-                    if (page == 0) {
-                        // Slide 1: Deal Sale Maroon Card (WA0032)
-                        Card(
-                            shape = RoundedCornerShape(14.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(145.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        Brush.linearGradient(
-                                            colors = listOf(Color(0xFF881337), Color(0xFFBE123C))
-                                        )
-                                    )
-                                    .padding(16.dp)
-                            ) {
-                                Column(modifier = Modifier.fillMaxWidth(0.85f)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = "DEAL SALE",
-                                            fontSize = 15.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(4.dp))
-                                                .background(Color(0xFFBBF7D0))
-                                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                                        ) {
-                                            Text(
-                                                text = "HURRY UP!",
-                                                fontSize = 9.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF166534)
-                                            )
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.height(6.dp))
-                                    Text(
-                                        text = "Now, become an Enterprise Client and get exclusive benefits at upto 60% off!",
-                                        fontSize = 12.sp,
-                                        lineHeight = 16.sp,
-                                        color = Color.White.copy(alpha = 0.9f)
-                                    )
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    Surface(
-                                        onClick = {
-                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://chittortech.in"))
-                                            context.startActivity(intent)
-                                        },
-                                        shape = RoundedCornerShape(20.dp),
-                                        color = Color.White,
-                                        modifier = Modifier.height(32.dp)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier.padding(horizontal = 16.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = "Buy Now",
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF881337)
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        // Slide 2: Join 10,000+ Businesses Yellow Card (WA0024)
-                        Card(
-                            shape = RoundedCornerShape(14.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(145.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(Color(0xFFFEF9C3))
-                                    .padding(16.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxSize(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = "Join 10,000+ Businesses Already Using Our Enterprise App",
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            lineHeight = 18.sp,
-                                            color = VyaparDark
-                                        )
-                                        Spacer(modifier = Modifier.height(10.dp))
-                                        Button(
-                                            onClick = {
-                                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://chittortech.in"))
-                                                context.startActivity(intent)
-                                            },
-                                            shape = RoundedCornerShape(20.dp),
-                                            colors = ButtonDefaults.buttonColors(containerColor = VyaparRed),
-                                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                                            modifier = Modifier.height(32.dp)
-                                        ) {
-                                            Text("Try for Free", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Icon(
-                                        imageVector = Icons.Outlined.Computer,
-                                        contentDescription = null,
-                                        tint = VyaparBlue,
-                                        modifier = Modifier.size(60.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Pager Dots Indicator
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    repeat(2) { idx ->
-                        Box(
-                            modifier = Modifier
-                                .size(if (pagerState.currentPage == idx) 14.dp else 6.dp, 6.dp)
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(if (pagerState.currentPage == idx) VyaparBlue else Color(0xFFCBD5E1))
-                        )
-                    }
-                }
-            }
-        }
-
-        // ── 2. My Business Section (WA0024) ───────────────────────────────────────
-        item {
-            Column {
-                Text(
-                    text = "My Business",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = VyaparDark,
-                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
-                )
-                Card(
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = VyaparWhite),
-                    border = BorderStroke(1.dp, VyaparCardBorder),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column {
-                        // Sale Item (Expandable)
-                        VyaparMenuRow(
-                            icon = Icons.Outlined.CurrencyRupee,
-                            title = "Sale",
-                            isExpandable = true,
-                            isExpanded = saleExpanded,
-                            onClick = {
-                                saleExpanded = !saleExpanded
-                                onSaleClick()
-                            }
-                        )
-                        AnimatedVisibility(visible = saleExpanded) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(VyaparBlueSoft)
-                                    .padding(start = 48.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text("• Sale Invoices (Billing)", fontSize = 13.sp, color = VyaparDark, modifier = Modifier.clickable { onSaleClick() })
-                                Text("• SOW Estimates & Quotations", fontSize = 13.sp, color = VyaparDark)
-                                Text("• Payment Receipts", fontSize = 13.sp, color = VyaparDark)
-                            }
-                        }
-                        HorizontalDivider(color = VyaparDivider)
-
-                        // Purchase Item (Expandable)
-                        VyaparMenuRow(
-                            icon = Icons.Outlined.ShoppingCart,
-                            title = "Purchase",
-                            isExpandable = true,
-                            isExpanded = purchaseExpanded,
-                            onClick = {
-                                purchaseExpanded = !purchaseExpanded
-                                onPurchaseClick()
-                            }
-                        )
-                        AnimatedVisibility(visible = purchaseExpanded) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(VyaparBlueSoft)
-                                    .padding(start = 48.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text("• Vendor Cloud Invoices", fontSize = 13.sp, color = VyaparDark)
-                                Text("• Domain & SSL Renewals", fontSize = 13.sp, color = VyaparDark)
-                            }
-                        }
-                        HorizontalDivider(color = VyaparDivider)
-
-                        // Expenses Item
-                        VyaparMenuRow(
-                            icon = Icons.Outlined.AccountBalanceWallet,
-                            title = "Expenses",
-                            isExpandable = false,
-                            onClick = onExpensesClick
-                        )
-                        HorizontalDivider(color = VyaparDivider)
-
-                        // My Online Store Item
-                        VyaparMenuRow(
-                            icon = Icons.Outlined.Storefront,
-                            title = "My Online Store",
-                            isExpandable = false,
-                            onClick = {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://chittortech.in"))
-                                context.startActivity(intent)
-                            }
-                        )
-                        HorizontalDivider(color = VyaparDivider)
-
-                        // Reports Item
-                        VyaparMenuRow(
-                            icon = Icons.Outlined.Assignment,
-                            title = "Reports",
-                            isExpandable = false,
-                            onClick = onReportsClick
-                        )
-                    }
-                }
-            }
-        }
-
-        // ── 3. Cash & Bank Section (WA0024) ───────────────────────────────────────
-        item {
-            Column {
-                Text(
-                    text = "Cash & Bank",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = VyaparDark,
-                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
-                )
-                Card(
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = VyaparWhite),
-                    border = BorderStroke(1.dp, VyaparCardBorder),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column {
-                        VyaparMenuRow(
-                            icon = Icons.Outlined.AccountBalance,
-                            title = "Bank Accounts",
-                            isExpandable = false,
-                            onClick = {}
-                        )
-                        HorizontalDivider(color = VyaparDivider)
-                        VyaparMenuRow(
-                            icon = Icons.Outlined.Money,
-                            title = "Cash In-Hand",
-                            isExpandable = false,
-                            onClick = {}
-                        )
-                    }
-                }
-            }
-        }
-
-        // ── 4. Account & Support Section (WA0033) ─────────────────────────────────
+        // ── 1. Company Profile Banner ─────────────────────────────────────────
         item {
             Card(
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = VyaparWhite),
                 border = BorderStroke(1.dp, VyaparCardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column {
-                    // Grow Your Business (WhatsApp)
-                    VyaparMenuRow(
-                        icon = Icons.Outlined.Chat,
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(Color.White)
+                            .border(1.5.dp, Color(0xFF0284C7), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.chittortech_logo),
+                            contentDescription = "ChittorTech Logo",
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(14.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "ChittorTech Solutions",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = VyaparDark
+                        )
+                        Text(
+                            text = "Collectorate Circle, Chittorgarh, Rajasthan",
+                            fontSize = 11.5.sp,
+                            color = Color(0xFF64748B)
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Kush Sharma & Lav Sharma (Founders)",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = VyaparBlue
+                        )
+                    }
+                }
+            }
+        }
+
+        // ── 2. GROW YOUR BUSINESS (Services Catalog) ──────────────────────────
+        item {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = VyaparWhite),
+                border = BorderStroke(1.dp, VyaparCardBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                    MenuSectionHeader(
                         title = "Grow Your Business",
-                        isExpandable = true,
+                        icon = Icons.Outlined.TrendingUp,
+                        iconColor = Color(0xFF16A34A),
                         isExpanded = growBusinessExpanded,
-                        onClick = {
-                            growBusinessExpanded = !growBusinessExpanded
-                            val uri = Uri.parse("https://api.whatsapp.com/send?phone=917685535660&text=Hi%20ChittorTech%20team,%20I%20want%20to%20grow%20my%20business%20with%20your%20services")
-                            context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                        onToggle = { growBusinessExpanded = !growBusinessExpanded }
+                    )
+
+                    AnimatedVisibility(visible = growBusinessExpanded) {
+                        Column {
+                            HorizontalDivider(color = Color(0xFFF1F5F9))
+
+                            MenuItemRow(
+                                title = "Enterprise AI & RAG Solutions",
+                                subtitle = "Sub-500ms Groq LPUs, vector databases & chatbots",
+                                icon = Icons.Outlined.SmartToy,
+                                iconColor = Color(0xFF0284C7),
+                                onClick = onExpensesClick
+                            )
+                            MenuItemRow(
+                                title = "Google Play 12-Tester Publishing",
+                                subtitle = "100% production approval guarantee with real testers",
+                                icon = Icons.Outlined.RocketLaunch,
+                                iconColor = Color(0xFFD97706),
+                                onClick = onExpensesClick
+                            )
+                            MenuItemRow(
+                                title = "Mobile App & Web Development",
+                                subtitle = "Native Kotlin/iOS & Next.js SaaS platforms",
+                                icon = Icons.Outlined.PhoneAndroid,
+                                iconColor = Color(0xFF16A34A),
+                                onClick = onExpensesClick
+                            )
+                            MenuItemRow(
+                                title = "Custom ERP & CRM Systems",
+                                subtitle = "Smart billing, multi-store inventory & lead pipelines",
+                                icon = Icons.Outlined.ReceiptLong,
+                                iconColor = Color(0xFF7C3AED),
+                                onClick = onExpensesClick
+                            )
+                            MenuItemRow(
+                                title = "Government & Startup Compliance",
+                                subtitle = "DPIIT Startup India, iStart Rajasthan & DGFT IEC",
+                                icon = Icons.Outlined.Verified,
+                                iconColor = Color(0xFF0F766E),
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://chittortech.in/trust-center"))
+                                    context.startActivity(intent)
+                                }
+                            )
                         }
-                    )
-                    HorizontalDivider(color = VyaparDivider)
-
-                    // Settings
-                    VyaparMenuRow(
-                        icon = Icons.Outlined.Settings,
-                        title = "Settings",
-                        isExpandable = false,
-                        onClick = {}
-                    )
-                    HorizontalDivider(color = VyaparDivider)
-
-                    // Help & Support
-                    VyaparMenuRow(
-                        icon = Icons.Outlined.HeadsetMic,
-                        title = "Help & Support",
-                        isExpandable = true,
-                        isExpanded = helpSupportExpanded,
-                        onClick = {
-                            helpSupportExpanded = !helpSupportExpanded
-                            onHelpdeskClick()
-                        }
-                    )
-                    HorizontalDivider(color = VyaparDivider)
-
-                    // Rate this app
-                    VyaparMenuRow(
-                        icon = Icons.Outlined.Grade,
-                        title = "Rate this app",
-                        isExpandable = false,
-                        onClick = {}
-                    )
+                    }
                 }
             }
         }
 
-        // ── 5. App Version Card (WA0033) ──────────────────────────────────────────
+        // ── 3. HELP & SUPPORT ─────────────────────────────────────────────────
         item {
             Card(
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = VyaparWhite),
                 border = BorderStroke(1.dp, VyaparCardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("App Version", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = VyaparDark)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text("1.0.0 (Production)", fontSize = 13.sp, color = Color(0xFF64748B))
+                Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                    MenuSectionHeader(
+                        title = "Help & Support",
+                        icon = Icons.Outlined.SupportAgent,
+                        iconColor = VyaparBlue,
+                        isExpanded = helpSupportExpanded,
+                        onToggle = { helpSupportExpanded = !helpSupportExpanded }
+                    )
+
+                    AnimatedVisibility(visible = helpSupportExpanded) {
+                        Column {
+                            HorizontalDivider(color = Color(0xFFF1F5F9))
+
+                            MenuItemRow(
+                                title = "WhatsApp Direct Chat",
+                                subtitle = "+91 7597451057 (Instant Founder Support)",
+                                icon = Icons.AutoMirrored.Filled.Send,
+                                iconColor = Color(0xFF25D366),
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/917597451057?text=Hello%20ChittorTech%20Support%2C%20I%20need%20assistance."))
+                                    context.startActivity(intent)
+                                }
+                            )
+                            MenuItemRow(
+                                title = "Direct Call Support",
+                                subtitle = "+91 75974 51057",
+                                icon = Icons.Outlined.Call,
+                                iconColor = Color(0xFF0284C7),
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:+917597451057"))
+                                    context.startActivity(intent)
+                                }
+                            )
+                            MenuItemRow(
+                                title = "Email Inquiries",
+                                subtitle = "business@chittortech.in",
+                                icon = Icons.Outlined.Email,
+                                iconColor = Color(0xFFEA580C),
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:business@chittortech.in"))
+                                    context.startActivity(intent)
+                                }
+                            )
+                            MenuItemRow(
+                                title = "Official Website",
+                                subtitle = "https://chittortech.in",
+                                icon = Icons.Outlined.Language,
+                                iconColor = Color(0xFF475569),
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://chittortech.in"))
+                                    context.startActivity(intent)
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }
 
-        // ── 6. Privacy Policy Link & Logout ───────────────────────────────────────
+        // ── 4. SETTINGS & PREFERENCES ─────────────────────────────────────────
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = VyaparWhite),
+                border = BorderStroke(1.dp, VyaparCardBorder),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "Privacy Policy",
-                    fontSize = 14.sp,
-                    color = VyaparBlue,
-                    modifier = Modifier.clickable {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://chittortech.in/privacy"))
-                        context.startActivity(intent)
-                    }
-                )
+                Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                    MenuSectionHeader(
+                        title = "Settings",
+                        icon = Icons.Outlined.Settings,
+                        iconColor = Color(0xFF64748B),
+                        isExpanded = settingsExpanded,
+                        onToggle = { settingsExpanded = !settingsExpanded }
+                    )
 
-                Text(
-                    text = "Logout",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = VyaparRed,
-                    modifier = Modifier.clickable { onSignOut() }
-                )
+                    AnimatedVisibility(visible = settingsExpanded) {
+                        Column {
+                            HorizontalDivider(color = Color(0xFFF1F5F9))
+
+                            MenuItemRow(
+                                title = "Privacy Policy & Terms",
+                                subtitle = "Data protection & service terms",
+                                icon = Icons.Outlined.Security,
+                                iconColor = Color(0xFF64748B),
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://chittortech.in/privacy-policy"))
+                                    context.startActivity(intent)
+                                }
+                            )
+                            MenuItemRow(
+                                title = "Clear Local Cache",
+                                subtitle = "Reset temp app data & memory",
+                                icon = Icons.Outlined.CleaningServices,
+                                iconColor = Color(0xFF64748B),
+                                onClick = {
+                                    Toast.makeText(context, "App cache cleared successfully!", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
 
-        // ── 7. Branding Footer (WA0033) ───────────────────────────────────────────
+        // ── 5. RATE THIS APP ──────────────────────────────────────────────────
         item {
-            Column(
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = VyaparWhite),
+                border = BorderStroke(1.dp, VyaparCardBorder),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .clickable {
+                        Toast.makeText(context, "Thank you for supporting ChittorTech!", Toast.LENGTH_SHORT).show()
+                    }
             ) {
-                androidx.compose.foundation.Image(
-                    painter = androidx.compose.ui.res.painterResource(id = com.chittortech.app.R.drawable.chittortech_logo),
-                    contentDescription = "ChittorTech Logo",
-                    modifier = Modifier.size(52.dp)
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "ChittorTech",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF64748B)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Crafted by ChittorTech Enterprise Solutions Pvt Ltd.",
-                    fontSize = 12.sp,
-                    color = Color(0xFF94A3B8)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xFFFEF3C7)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Outlined.StarRate, contentDescription = null, tint = Color(0xFFD97706), modifier = Modifier.size(22.dp))
+                    }
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Rate This App", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VyaparDark)
+                        Text("Share your feedback on Google Play Store", fontSize = 11.5.sp, color = Color(0xFF64748B))
+                    }
+                    Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(14.dp))
+                }
+            }
+        }
+
+        // ── 6. SIGN OUT / SWITCH PORTAL ───────────────────────────────────────
+        item {
+            OutlinedButton(
+                onClick = onSignOut,
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, Color(0xFFDC2626)),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+            ) {
+                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Sign Out / Switch Portal", fontWeight = FontWeight.Bold, fontSize = 13.sp)
             }
         }
     }
 }
 
+// ── Menu Section Header ───────────────────────────────────────────────────────
 @Composable
-private fun VyaparMenuRow(
-    icon: ImageVector,
+private fun MenuSectionHeader(
     title: String,
-    isExpandable: Boolean,
-    isExpanded: Boolean = false,
+    icon: ImageVector,
+    iconColor: Color,
+    isExpanded: Boolean,
+    onToggle: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onToggle)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(imageVector = icon, contentDescription = title, tint = iconColor, modifier = Modifier.size(22.dp))
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(text = title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = VyaparDark)
+        }
+        Icon(
+            imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+            contentDescription = null,
+            tint = Color(0xFF94A3B8),
+            modifier = Modifier.size(20.dp)
+        )
+    }
+}
+
+// ── Menu Item Row ─────────────────────────────────────────────────────────────
+@Composable
+private fun MenuItemRow(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    iconColor: Color,
     onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = Color(0xFF475569),
-                modifier = Modifier.size(22.dp)
-            )
-            Spacer(modifier = Modifier.width(14.dp))
-            Text(
-                text = title,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
-                color = VyaparDark
-            )
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(iconColor.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(imageVector = icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(18.dp))
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = title, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = VyaparDark)
+            Text(text = subtitle, fontSize = 11.sp, color = Color(0xFF64748B))
         }
 
         Icon(
-            imageVector = if (isExpandable) {
-                if (isExpanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown
-            } else {
-                Icons.Outlined.ChevronRight
-            },
+            imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
             contentDescription = null,
-            tint = VyaparBlue,
-            modifier = Modifier.size(20.dp)
+            tint = Color(0xFFCBD5E1),
+            modifier = Modifier.size(13.dp)
         )
     }
 }

@@ -97,9 +97,11 @@ fun ChittorTechChatbotScreen(
         }
     }
 
-    // Scroll to bottom when keyboard opens
-    LaunchedEffect(messages.size, isTyping) {
+    // Auto-scroll when keyboard opens, new messages arrive, or bot starts typing
+    val imeBottom = WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current)
+    LaunchedEffect(imeBottom, messages.size, isTyping) {
         if (messages.isNotEmpty()) {
+            kotlinx.coroutines.delay(100)
             listState.animateScrollToItem(messages.size)
         }
     }
