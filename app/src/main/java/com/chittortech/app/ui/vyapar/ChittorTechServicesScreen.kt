@@ -595,21 +595,8 @@ fun ChittorTechServicesScreen(
 ) {
     val context = LocalContext.current
     var selectedCategory by remember { mutableStateOf("All") }
-    var selectedServiceDetail by remember { mutableStateOf<ChittorService?>(null) }
     var selectedServiceForModal by remember { mutableStateOf<ChittorService?>(null) }
     var showSuccessSnackbar by remember { mutableStateOf(false) }
-
-    // If a service detail page is selected, display the full dedicated screen!
-    if (selectedServiceDetail != null) {
-        ServiceDetailScreen(
-            service = selectedServiceDetail!!,
-            onBack = { selectedServiceDetail = null },
-            onEnquire = {
-                selectedServiceForModal = selectedServiceDetail
-            }
-        )
-        return
-    }
 
     val categories = remember {
         listOf("All", "Mobile Apps", "AI & Automation", "Google Play Launch", "Web & SaaS", "Enterprise ERP/CRM", "Cloud & DevOps", "E-Commerce", "SEO & Growth", "Govt & Startup Compliance")
@@ -822,9 +809,13 @@ fun ChittorTechServicesScreen(
 
             // ── 3. Services List Cards ────────────────────────────────────────
             items(filteredServices, key = { it.id }) { service ->
+                val webUrl = if (service.websiteSlug.isNotBlank()) "https://chittortech.in/${service.websiteSlug}" else "https://chittortech.in"
                 ServiceCard(
                     service = service,
-                    onClick = { selectedServiceDetail = service },
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(webUrl))
+                        context.startActivity(intent)
+                    },
                     onEnquire = { selectedServiceForModal = service },
                     onWhatsApp = {
                         val msg = Uri.encode("Hello ChittorTech, I am inquiring about ${service.title}.")
@@ -1009,16 +1000,28 @@ private fun ServiceCard(
                     .clickable(onClick = onClick)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = "Explore Dedicated Page & Architecture",
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0284C7)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.OpenInBrowser,
+                            contentDescription = null,
+                            tint = Color(0xFF0284C7),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Explore Dedicated Page & Architecture",
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0284C7)
+                        )
+                    }
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
                         contentDescription = null,

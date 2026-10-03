@@ -568,7 +568,10 @@ fun VyaparHomeScreen(
                                 icon = Icons.Outlined.SmartToy,
                                 iconColor = Color(0xFF0284C7),
                                 bgColor = Color(0xFFE0F2FE),
-                                onClick = onOpenAiChat
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://chittortech.in/ai-chatbot-development"))
+                                    context.startActivity(intent)
+                                }
                             )
                             HomeCapabilityItem(
                                 title = "Mobile Apps",
@@ -576,7 +579,10 @@ fun VyaparHomeScreen(
                                 icon = Icons.Outlined.PhoneAndroid,
                                 iconColor = Color(0xFF16A34A),
                                 bgColor = Color(0xFFDCFCE7),
-                                onClick = onExploreServices
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://chittortech.in/android-application"))
+                                    context.startActivity(intent)
+                                }
                             )
                             HomeCapabilityItem(
                                 title = "Play Store",
@@ -584,7 +590,10 @@ fun VyaparHomeScreen(
                                 icon = Icons.Outlined.RocketLaunch,
                                 iconColor = Color(0xFFD97706),
                                 bgColor = Color(0xFFFEF3C7),
-                                onClick = onExploreServices
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://chittortech.in/google-play-publishing"))
+                                    context.startActivity(intent)
+                                }
                             )
                             HomeCapabilityItem(
                                 title = "Custom ERP",
@@ -592,7 +601,10 @@ fun VyaparHomeScreen(
                                 icon = Icons.AutoMirrored.Outlined.ReceiptLong,
                                 iconColor = Color(0xFF7C3AED),
                                 bgColor = Color(0xFFF3E8FF),
-                                onClick = onExploreServices
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://chittortech.in/erp"))
+                                    context.startActivity(intent)
+                                }
                             )
                         }
 
@@ -610,7 +622,10 @@ fun VyaparHomeScreen(
                                         icon = Icons.Outlined.Web,
                                         iconColor = Color(0xFF0F172A),
                                         bgColor = Color(0xFFF1F5F9),
-                                        onClick = onExploreServices
+                                        onClick = {
+                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://chittortech.in/web-development-services"))
+                                            context.startActivity(intent)
+                                        }
                                     )
                                     HomeCapabilityItem(
                                         title = "Cloud DevOps",
@@ -618,7 +633,10 @@ fun VyaparHomeScreen(
                                         icon = Icons.Outlined.Cloud,
                                         iconColor = Color(0xFF0284C7),
                                         bgColor = Color(0xFFE0F2FE),
-                                        onClick = onExploreServices
+                                        onClick = {
+                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://chittortech.in/cloud-hosting-deployment"))
+                                            context.startActivity(intent)
+                                        }
                                     )
                                     HomeCapabilityItem(
                                         title = "E-Commerce",
@@ -626,7 +644,10 @@ fun VyaparHomeScreen(
                                         icon = Icons.Outlined.ShoppingCart,
                                         iconColor = Color(0xFF059669),
                                         bgColor = Color(0xFFD1FAE5),
-                                        onClick = onExploreServices
+                                        onClick = {
+                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://chittortech.in/e-commerce-website-development"))
+                                            context.startActivity(intent)
+                                        }
                                     )
                                     HomeCapabilityItem(
                                         title = "Compliance",
