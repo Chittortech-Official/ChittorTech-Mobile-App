@@ -22,8 +22,7 @@ import com.chittortech.app.theme.*
 
 enum class VyaparTab(val label: String) {
     HOME("HOME"),
-    DASHBOARD("DASHBOARD"),
-    ITEMS("ITEMS"),
+    SERVICES("SERVICES"),
     MENU("MENU"),
     GET_DESKTOP("GET DESKTOP")
 }
@@ -54,16 +53,10 @@ fun VyaparBottomBar(
                 onClick = { onTabSelected(VyaparTab.HOME) }
             )
             VyaparNavItem(
-                label = "DASHBOARD",
-                icon = Icons.Outlined.BarChart,
-                selected = currentTab == VyaparTab.DASHBOARD,
-                onClick = { onTabSelected(VyaparTab.DASHBOARD) }
-            )
-            VyaparNavItem(
-                label = "ITEMS",
-                icon = Icons.Outlined.Inventory2,
-                selected = currentTab == VyaparTab.ITEMS,
-                onClick = { onTabSelected(VyaparTab.ITEMS) }
+                label = "SERVICES",
+                icon = Icons.Outlined.Layers,
+                selected = currentTab == VyaparTab.SERVICES,
+                onClick = { onTabSelected(VyaparTab.SERVICES) }
             )
             VyaparNavItem(
                 label = "MENU",
@@ -93,7 +86,7 @@ private fun VyaparNavItem(
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .padding(horizontal = 12.dp, vertical = 4.dp)
     ) {
         Icon(
             imageVector = icon,
@@ -123,7 +116,7 @@ private fun VyaparDesktopNavItem(
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 4.dp, vertical = 4.dp)
+            .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
         // Windows 4-color grid icon representation
         Row(modifier = Modifier.size(22.dp)) {

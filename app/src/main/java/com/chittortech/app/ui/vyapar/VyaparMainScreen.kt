@@ -86,19 +86,14 @@ fun VyaparMainScreen(
                         clients = clients,
                         onAddNewSale = { showCreateInvoiceDialog = true },
                         onAddNewParty = { showCreatePartyDialog = true },
-                        onSaleReportClick = { currentTab = VyaparTab.DASHBOARD }
+                        onSaleReportClick = { currentTab = VyaparTab.SERVICES }
                     )
                 }
-                VyaparTab.DASHBOARD -> {
-                    VyaparDashboardScreen(
-                        kpi = kpi,
-                        onSeeReportsClick = { currentTab = VyaparTab.HOME }
-                    )
-                }
-                VyaparTab.ITEMS -> {
-                    VyaparItemsScreen(
-                        projects = projects,
-                        onAddNewItem = { showCreateItemDialog = true }
+                VyaparTab.SERVICES -> {
+                    ChittorTechServicesScreen(
+                        onSubmitLead = { lead ->
+                            scope.launch { repository.submitLead(lead) }
+                        }
                     )
                 }
                 VyaparTab.MENU -> {
@@ -108,10 +103,10 @@ fun VyaparMainScreen(
                         },
                         onPurchaseClick = {},
                         onExpensesClick = {
-                            currentTab = VyaparTab.DASHBOARD
+                            currentTab = VyaparTab.SERVICES
                         },
                         onReportsClick = {
-                            currentTab = VyaparTab.DASHBOARD
+                            currentTab = VyaparTab.SERVICES
                         },
                         onHelpdeskClick = {},
                         onSignOut = {

@@ -99,3 +99,31 @@ data class AdminKpi(
     val activeDeployments: Int = 0,
     val openTickets: Int = 0
 )
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Website Service & Lead Models
+// ─────────────────────────────────────────────────────────────────────────────
+
+data class ChittorService(
+    val id: String,
+    val title: String,
+    val category: String,
+    val shortDescription: String,
+    val keyFeatures: List<String>,
+    val techStack: List<String>,
+    val popularBadge: String? = null
+)
+
+data class LeadInquiry(
+    val leadId: String = "",
+    val name: String = "",
+    val email: String = "",
+    val contact: String = "",
+    val company: String = "",
+    val service: String = "",
+    val message: String = "",
+    val source: String = "ChittorTech Mobile App",
+    val status: String = "new",
+    val createdAt: Timestamp? = null
+)
+

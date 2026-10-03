@@ -273,7 +273,30 @@ class ChittorTechRepository {
             }
         awaitClose { listener.remove() }
     }
+
+    // ─── Leads & Inquiries (Website CRM) ──────────────────────────────────────
+
+    suspend fun submitLead(lead: LeadInquiry): Result<Unit> {
+        return try {
+            val data = hashMapOf(
+                "name" to lead.name,
+                "email" to lead.email,
+                "contact" to lead.contact,
+                "company" to lead.company,
+                "service" to lead.service,
+                "message" to lead.message,
+                "source" to lead.source,
+                "status" to "new",
+                "createdAt" to Timestamp.now()
+            )
+            db.collection("leads").add(data).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
+
 
 // ─── Extension Mappers ────────────────────────────────────────────────────────
 
