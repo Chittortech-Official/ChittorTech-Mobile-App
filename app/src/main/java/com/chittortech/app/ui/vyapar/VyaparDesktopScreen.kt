@@ -41,8 +41,22 @@ private data class FallingParticle(
 @Composable
 fun VyaparDesktopScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("chittortech_desktop_prefs", android.content.Context.MODE_PRIVATE) }
+    var isRegistered by remember { mutableStateOf(prefs.getBoolean("desktop_early_access_registered", false)) }
     var isRaining by remember { mutableStateOf(false) }
     var showNotifyDialog by remember { mutableStateOf(false) }
+
+    val handleNotifyClick: () -> Unit = {
+        if (isRegistered) {
+            Toast.makeText(context, "You are already registered! We will notify you immediately on release.", Toast.LENGTH_SHORT).show()
+            isRaining = true
+        } else {
+            prefs.edit().putBoolean("desktop_early_access_registered", true).apply()
+            isRegistered = true
+            isRaining = true
+            showNotifyDialog = true
+        }
+    }
 
     // Particle shower animation trigger
     val particles = remember {
@@ -98,14 +112,11 @@ fun VyaparDesktopScreen(modifier: Modifier = Modifier) {
                     // "COMING SOON" Status Chip (Clickable for Bubble Rain!)
                     Surface(
                         shape = RoundedCornerShape(20.dp),
-                        color = Color(0xFFEFF6FF),
-                        border = BorderStroke(1.5.dp, Color(0xFF38BDF8)),
+                        color = if (isRegistered) Color(0xFFECFDF5) else Color(0xFFEFF6FF),
+                        border = BorderStroke(1.5.dp, if (isRegistered) Color(0xFF10B981) else Color(0xFF38BDF8)),
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
-                            .clickable {
-                                isRaining = true
-                                showNotifyDialog = true
-                            }
+                            .clickable(onClick = handleNotifyClick)
                             .padding(bottom = 16.dp)
                     ) {
                         Row(
@@ -116,14 +127,14 @@ fun VyaparDesktopScreen(modifier: Modifier = Modifier) {
                                 modifier = Modifier
                                     .size(8.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFF0284C7))
+                                    .background(if (isRegistered) Color(0xFF10B981) else Color(0xFF0284C7))
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "✨ COMING SOON • TAP HERE",
+                                text = if (isRegistered) "✓ LAUNCH VIP ALERT ACTIVE" else "✨ COMING SOON • TAP HERE",
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = Color(0xFF0369A1),
+                                color = if (isRegistered) Color(0xFF047857) else Color(0xFF0369A1),
                                 letterSpacing = 0.8.sp
                             )
                         }
@@ -171,17 +182,26 @@ fun VyaparDesktopScreen(modifier: Modifier = Modifier) {
 
                     // Coming Soon Button
                     Button(
-                        onClick = {
-                            isRaining = true
-                            showNotifyDialog = true
-                        },
+                        onClick = handleNotifyClick,
                         shape = RoundedCornerShape(24.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F172A)),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isRegistered) Color(0xFF0F766E) else Color(0xFF0F172A)
+                        ),
                         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
                     ) {
-                        Icon(Icons.Outlined.NotificationsActive, contentDescription = null, tint = Color(0xFFFBBF24), modifier = Modifier.size(18.dp))
+                        Icon(
+                            imageVector = if (isRegistered) Icons.Outlined.CheckCircle else Icons.Outlined.NotificationsActive,
+                            contentDescription = null,
+                            tint = if (isRegistered) Color(0xFF34D399) else Color(0xFFFBBF24),
+                            modifier = Modifier.size(18.dp)
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Notify Me On Launch • Windows & Mac", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 13.sp)
+                        Text(
+                            text = if (isRegistered) "✓ Registered for Launch Early-Access" else "Notify Me On Launch • Windows & Mac",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            fontSize = 13.sp
+                        )
                     }
                 }
             }
@@ -412,12 +432,17 @@ private fun SpecChip(
         shape = RoundedCornerShape(10.dp),
         color = Color(0xFFF8FAFC),
         border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-        modifier = modifier
+        modifier = modifier.height(66.dp)
     ) {
-        Column(modifier = Modifier.padding(10.dp)) {
-            Text(text = title, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(text = title, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B), maxLines = 1)
             Spacer(modifier = Modifier.height(2.dp))
-            Text(text = detail, fontSize = 11.5.sp, fontWeight = FontWeight.Medium, color = VyaparDark)
+            Text(text = detail, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = VyaparDark, maxLines = 1)
         }
     }
 }

@@ -52,7 +52,6 @@ fun VyaparMainScreen(
 
     // Dialog & Notification States
     var showNotificationsDialog by remember { mutableStateOf(false) }
-    var showSettingsDialog by remember { mutableStateOf(false) }
     var notificationCount by remember { mutableStateOf(2) }
 
     // Keyboard (IME) detection to hide bottom bar when typing in Chatbot / fields
@@ -63,10 +62,9 @@ fun VyaparMainScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             VyaparTopBar(
-                businessName = user.companyName.ifBlank { user.displayName.ifBlank { "ChittorTech Solutions" } },
+                businessName = if (user.companyName.isNotBlank() && user.companyName != "ChittorTech Solutions" && user.companyName != "Public Visitor") user.companyName else "ChittorTech",
                 notificationCount = notificationCount,
-                onNotificationClick = { showNotificationsDialog = true },
-                onSettingsClick = { showSettingsDialog = true }
+                onNotificationClick = { showNotificationsDialog = true }
             )
         },
         bottomBar = {
@@ -201,116 +199,6 @@ fun VyaparMainScreen(
             shape = RoundedCornerShape(20.dp)
         )
     }
-
-    // ── 2. Active Settings Dialog ─────────────────────────────────────────────
-    if (showSettingsDialog) {
-        AlertDialog(
-            onDismissRequest = { showSettingsDialog = false },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Settings, contentDescription = null, tint = Color(0xFF0F172A), modifier = Modifier.size(24.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("App Settings", fontWeight = FontWeight.Bold, color = VyaparDark, fontSize = 18.sp)
-                }
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Profile Chip
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFFF8FAFC),
-                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                text = user.displayName.ifBlank { "Guest Explorer" },
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                color = VyaparDark
-                            )
-                            Text(
-                                text = user.email.ifBlank { "Guest Session (Visitor)" },
-                                fontSize = 12.sp,
-                                color = Color(0xFF64748B)
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = Color(0xFFE0F2FE)
-                            ) {
-                                Text(
-                                    text = "Role: ${user.role.uppercase().ifBlank { "CLIENT" }}",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF0369A1),
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    // Settings Options
-                    SettingsActionRow(
-                        icon = Icons.Outlined.CleaningServices,
-                        title = "Clear Cache & Storage",
-                        subtitle = "Free temporary app memory",
-                        onClick = {
-                            Toast.makeText(context, "App cache cleared successfully (18.4 MB released)", Toast.LENGTH_SHORT).show()
-                        }
-                    )
-
-                    SettingsActionRow(
-                        icon = Icons.Outlined.Language,
-                        title = "Visit ChittorTech Website",
-                        subtitle = "chittortech.in",
-                        onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://chittortech.in"))
-                            context.startActivity(intent)
-                        }
-                    )
-
-                    SettingsActionRow(
-                        icon = Icons.Outlined.Info,
-                        title = "Version & Build",
-                        subtitle = "v2.4.0 (ChittorTech Production 2026)",
-                        onClick = {}
-                    )
-
-                    // Sign Out Option
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = Color(0xFFFEF2F2),
-                        border = BorderStroke(1.dp, Color(0xFFFECACA)),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable {
-                                showSettingsDialog = false
-                                repository.signOut()
-                                onSignOut()
-                            }
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(12.dp)
-                        ) {
-                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = Color(0xFFDC2626), modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text("Sign Out of Session", color = Color(0xFFDC2626), fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showSettingsDialog = false }) {
-                    Text("Close", fontWeight = FontWeight.SemiBold, color = Color(0xFF64748B))
-                }
-            },
-            containerColor = Color.White,
-            shape = RoundedCornerShape(20.dp)
-        )
-    }
 }
 
 // ── Notification Card Item ────────────────────────────────────────────────────
@@ -342,37 +230,6 @@ private fun NotificationCardItem(
             Text(text = time, fontSize = 10.5.sp, color = Color(0xFF94A3B8))
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = detail, fontSize = 11.5.sp, lineHeight = 16.sp, color = Color(0xFF475569))
-        }
-    }
-}
-
-// ── Settings Action Row ───────────────────────────────────────────────────────
-@Composable
-private fun SettingsActionRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit
-) {
-    Surface(
-        shape = RoundedCornerShape(10.dp),
-        color = Color(0xFFF8FAFC),
-        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .clickable(onClick = onClick)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(10.dp)
-        ) {
-            Icon(icon, contentDescription = null, tint = Color(0xFF0284C7), modifier = Modifier.size(20.dp))
-            Spacer(modifier = Modifier.width(10.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = title, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = VyaparDark)
-                Text(text = subtitle, fontSize = 10.5.sp, color = Color(0xFF64748B))
-            }
         }
     }
 }

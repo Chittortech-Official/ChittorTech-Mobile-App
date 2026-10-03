@@ -45,7 +45,6 @@ fun VyaparMenuScreen(
 
     var growBusinessExpanded by remember { mutableStateOf(true) }
     var helpSupportExpanded by remember { mutableStateOf(true) }
-    var settingsExpanded by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = modifier
@@ -85,8 +84,8 @@ fun VyaparMenuScreen(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "ChittorTech Solutions",
-                            fontSize = 16.sp,
+                            text = "ChittorTech",
+                            fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
                             color = VyaparDark
                         )
@@ -97,7 +96,7 @@ fun VyaparMenuScreen(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Kush Sharma & Lav Sharma (Founders)",
+                            text = "User: Guest • chittortech.in",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = VyaparBlue
@@ -233,36 +232,9 @@ fun VyaparMenuScreen(
                                     context.startActivity(intent)
                                 }
                             )
-                        }
-                    }
-                }
-            }
-        }
-
-        // ── 4. SETTINGS & PREFERENCES ─────────────────────────────────────────
-        item {
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = VyaparWhite),
-                border = BorderStroke(1.dp, VyaparCardBorder),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                    MenuSectionHeader(
-                        title = "Settings",
-                        icon = Icons.Outlined.Settings,
-                        iconColor = Color(0xFF64748B),
-                        isExpanded = settingsExpanded,
-                        onToggle = { settingsExpanded = !settingsExpanded }
-                    )
-
-                    AnimatedVisibility(visible = settingsExpanded) {
-                        Column {
-                            HorizontalDivider(color = Color(0xFFF1F5F9))
-
                             MenuItemRow(
                                 title = "Privacy Policy & Terms",
-                                subtitle = "Data protection & service terms",
+                                subtitle = "Data safety & compliance documentation",
                                 icon = Icons.Outlined.Security,
                                 iconColor = Color(0xFF64748B),
                                 onClick = {
@@ -270,22 +242,13 @@ fun VyaparMenuScreen(
                                     context.startActivity(intent)
                                 }
                             )
-                            MenuItemRow(
-                                title = "Clear Local Cache",
-                                subtitle = "Reset temp app data & memory",
-                                icon = Icons.Outlined.CleaningServices,
-                                iconColor = Color(0xFF64748B),
-                                onClick = {
-                                    Toast.makeText(context, "App cache cleared successfully!", Toast.LENGTH_SHORT).show()
-                                }
-                            )
                         }
                     }
                 }
             }
         }
 
-        // ── 5. RATE THIS APP ──────────────────────────────────────────────────
+        // ── 4. RATE THIS APP ──────────────────────────────────────────────────
         item {
             Card(
                 shape = RoundedCornerShape(16.dp),
@@ -294,7 +257,7 @@ fun VyaparMenuScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        Toast.makeText(context, "Thank you for supporting ChittorTech!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Coming Soon! Google Play Store reviews will be enabled upon public launch.", Toast.LENGTH_LONG).show()
                     }
             ) {
                 Row(
@@ -312,8 +275,18 @@ fun VyaparMenuScreen(
                     }
                     Spacer(modifier = Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Rate This App", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VyaparDark)
-                        Text("Share your feedback on Google Play Store", fontSize = 11.5.sp, color = Color(0xFF64748B))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Rate This App", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = VyaparDark)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = Color(0xFFFEF3C7),
+                                border = BorderStroke(1.dp, Color(0xFFFDE68A))
+                            ) {
+                                Text("COMING SOON", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFFB45309), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                            }
+                        }
+                        Text("Google Play Store reviews will open with public release", fontSize = 11.5.sp, color = Color(0xFF64748B))
                     }
                     Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(14.dp))
                 }

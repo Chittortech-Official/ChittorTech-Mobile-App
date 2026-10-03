@@ -104,6 +104,14 @@ data class AdminKpi(
 // Website Service & Lead Models
 // ─────────────────────────────────────────────────────────────────────────────
 
+data class ServicePlan(
+    val name: String,
+    val price: String,
+    val description: String = "",
+    val features: List<String> = emptyList(),
+    val isPopular: Boolean = false
+)
+
 data class ChittorService(
     val id: String,
     val title: String,
@@ -111,7 +119,14 @@ data class ChittorService(
     val shortDescription: String,
     val keyFeatures: List<String>,
     val techStack: List<String>,
-    val popularBadge: String? = null
+    val popularBadge: String? = null,
+    val longDescription: String = "",
+    val websiteSlug: String = "",
+    val deliverables: List<String> = emptyList(),
+    val benefits: List<Pair<String, String>> = emptyList(),
+    val plans: List<ServicePlan> = emptyList(),
+    val faqs: List<Pair<String, String>> = emptyList(),
+    val metrics: List<Pair<String, String>> = emptyList()
 )
 
 data class LeadInquiry(

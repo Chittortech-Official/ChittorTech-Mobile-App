@@ -22,10 +22,9 @@ import com.chittortech.app.theme.*
 
 @Composable
 fun VyaparTopBar(
-    businessName: String = "ChittorTech Solutions",
+    businessName: String = "ChittorTech",
     notificationCount: Int = 2,
-    onNotificationClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {}
+    onNotificationClick: () -> Unit = {}
 ) {
     Surface(
         color = VyaparWhite,
@@ -70,47 +69,30 @@ fun VyaparTopBar(
                 )
             }
 
-            // Right: Notification Bell with Badge + Settings Icon
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // Right: Notification Bell with Badge
+            IconButton(
+                onClick = onNotificationClick,
+                modifier = Modifier.size(36.dp)
             ) {
-                IconButton(
-                    onClick = onNotificationClick,
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    BadgedBox(
-                        badge = {
-                            if (notificationCount > 0) {
-                                Badge(
-                                    containerColor = VyaparRed,
-                                    contentColor = Color.White
-                                ) {
-                                    Text(
-                                        text = "$notificationCount",
-                                        fontSize = 9.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
+                BadgedBox(
+                    badge = {
+                        if (notificationCount > 0) {
+                            Badge(
+                                containerColor = VyaparRed,
+                                contentColor = Color.White
+                            ) {
+                                Text(
+                                    text = "$notificationCount",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
                         }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Notifications,
-                            contentDescription = "Notifications",
-                            tint = Color(0xFF475569),
-                            modifier = Modifier.size(24.dp)
-                        )
                     }
-                }
-
-                IconButton(
-                    onClick = onSettingsClick,
-                    modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.Settings,
-                        contentDescription = "Settings",
+                        imageVector = Icons.Outlined.Notifications,
+                        contentDescription = "Notifications",
                         tint = Color(0xFF475569),
                         modifier = Modifier.size(24.dp)
                     )
