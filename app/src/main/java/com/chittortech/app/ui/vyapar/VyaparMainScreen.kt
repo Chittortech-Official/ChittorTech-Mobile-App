@@ -116,6 +116,9 @@ fun VyaparMainScreen(
                         }
                     )
                 }
+                VyaparTab.AI -> {
+                    ChittorTechChatbotScreen()
+                }
                 VyaparTab.GET_DESKTOP -> {
                     VyaparDesktopScreen()
                 }

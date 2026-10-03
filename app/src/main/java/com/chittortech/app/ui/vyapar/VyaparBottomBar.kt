@@ -24,6 +24,7 @@ enum class VyaparTab(val label: String) {
     HOME("HOME"),
     SERVICES("SERVICES"),
     MENU("MENU"),
+    AI("AI"),
     GET_DESKTOP("GET DESKTOP")
 }
 
@@ -63,6 +64,12 @@ fun VyaparBottomBar(
                 icon = Icons.Outlined.Menu,
                 selected = currentTab == VyaparTab.MENU,
                 onClick = { onTabSelected(VyaparTab.MENU) }
+            )
+            VyaparNavItem(
+                label = "AI",
+                icon = Icons.Outlined.SmartToy,
+                selected = currentTab == VyaparTab.AI,
+                onClick = { onTabSelected(VyaparTab.AI) }
             )
             VyaparDesktopNavItem(
                 selected = currentTab == VyaparTab.GET_DESKTOP,
