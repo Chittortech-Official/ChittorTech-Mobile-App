@@ -79,6 +79,8 @@ fun ChittorTechSplashScreen(
                     )
                 )
             )
+            .statusBarsPadding()
+            .navigationBarsPadding()
             .clickable { onSplashFinished() }, // Tap to skip
         contentAlignment = Alignment.Center
     ) {
@@ -86,18 +88,20 @@ fun ChittorTechSplashScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
-                .padding(24.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 12.dp)
                 .scale(scale)
+                .verticalScroll(rememberScrollState())
         ) {
             // ── 3D AI Character Container with Glowing Holographic Aura ──────────
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.size(230.dp)
+                modifier = Modifier.size(200.dp)
             ) {
                 // Outer Cyan/Blue Holographic Halo
                 Box(
                     modifier = Modifier
-                        .size(210.dp)
+                        .size(180.dp)
                         .scale(pulseGlow)
                         .clip(CircleShape)
                         .background(
@@ -113,11 +117,11 @@ fun ChittorTechSplashScreen(
 
                 // Outer Card with border
                 Card(
-                    shape = RoundedCornerShape(32.dp),
+                    shape = RoundedCornerShape(28.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
                     border = BorderStroke(2.dp, Brush.linearGradient(listOf(Color(0xFF38BDF8), Color(0xFF818CF8)))),
                     elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
-                    modifier = Modifier.size(190.dp)
+                    modifier = Modifier.size(165.dp)
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.chittortech_ai_mascot),
@@ -159,7 +163,7 @@ fun ChittorTechSplashScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(26.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // ── Official ChittorTech Logo & Typography ─────────────────────────
             Row(
@@ -169,7 +173,7 @@ fun ChittorTechSplashScreen(
                 Surface(
                     shape = RoundedCornerShape(10.dp),
                     color = Color.White,
-                    modifier = Modifier.size(38.dp)
+                    modifier = Modifier.size(36.dp)
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.chittortech_logo),
@@ -182,14 +186,14 @@ fun ChittorTechSplashScreen(
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
                     text = "ChittorTech",
-                    fontSize = 28.sp,
+                    fontSize = 26.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color.White,
                     letterSpacing = 0.5.sp
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Text(
                 text = "Enterprise AI · Cloud Architecture · Custom Software",
@@ -200,7 +204,7 @@ fun ChittorTechSplashScreen(
                 modifier = Modifier.padding(horizontal = 24.dp)
             )
 
-            Spacer(modifier = Modifier.height(36.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // ── Holographic Status Pill ─────────────────────────────────────────
             Surface(
@@ -227,25 +231,38 @@ fun ChittorTechSplashScreen(
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(48.dp))
         }
 
-        // Tap to continue prompt at bottom
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+        // ── Responsive Safe Footer (Safe from Android Navigation Bar & Cutout) ────
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 28.dp)
+                .padding(bottom = 14.dp)
         ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Tap anywhere to skip",
+                    fontSize = 11.sp,
+                    color = Color.White.copy(alpha = 0.5f)
+                )
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.5f),
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Tap anywhere to skip",
-                fontSize = 11.sp,
-                color = Color.White.copy(alpha = 0.45f)
-            )
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = Color.White.copy(alpha = 0.45f),
-                modifier = Modifier.size(14.dp)
+                text = "ChittorTech © 2026 • chittortech.in",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.White.copy(alpha = 0.35f)
             )
         }
     }

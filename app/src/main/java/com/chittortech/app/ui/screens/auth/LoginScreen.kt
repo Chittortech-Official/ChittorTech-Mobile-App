@@ -28,9 +28,9 @@ import com.chittortech.app.model.CtUser
 import com.chittortech.app.theme.*
 
 enum class LoginRoleTab {
-    CORPORATE, // Verified Clients / Enterprises
-    ADMIN,     // Founders (Kush Sharma & Lav Sharma)
-    GUEST      // Open to all public users / visitors
+    GUEST,      // Open to all public users / visitors (1st & Default)
+    CORPORATE,  // Verified Clients / Enterprises (2nd)
+    ADMIN       // Founders (Kush Sharma & Lav Sharma) (3rd)
 }
 
 @Composable
@@ -41,7 +41,7 @@ fun LoginScreen(
     errorMessage: String? = null,
     modifier: Modifier = Modifier
 ) {
-    var selectedTab by remember { mutableStateOf(LoginRoleTab.CORPORATE) }
+    var selectedTab by remember { mutableStateOf(LoginRoleTab.GUEST) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -70,8 +70,9 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .statusBarsPadding(),
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(24.dp))
@@ -138,7 +139,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // ── 3-Way Login Mode Segmented Controller ────────────────────────
+            // ── 3-Way Login Mode Segmented Controller (Guest -> Corporate -> Admin) ──
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = Color.Black.copy(alpha = 0.25f),
@@ -152,6 +153,13 @@ fun LoginScreen(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     RoleTabPill(
+                        label = "Guest",
+                        icon = Icons.Default.Explore,
+                        isSelected = selectedTab == LoginRoleTab.GUEST,
+                        onClick = { selectedTab = LoginRoleTab.GUEST },
+                        modifier = Modifier.weight(1f)
+                    )
+                    RoleTabPill(
                         label = "Corporate",
                         icon = Icons.Default.Business,
                         isSelected = selectedTab == LoginRoleTab.CORPORATE,
@@ -163,13 +171,6 @@ fun LoginScreen(
                         icon = Icons.Default.AdminPanelSettings,
                         isSelected = selectedTab == LoginRoleTab.ADMIN,
                         onClick = { selectedTab = LoginRoleTab.ADMIN },
-                        modifier = Modifier.weight(1f)
-                    )
-                    RoleTabPill(
-                        label = "Guest",
-                        icon = Icons.Default.Explore,
-                        isSelected = selectedTab == LoginRoleTab.GUEST,
-                        onClick = { selectedTab = LoginRoleTab.GUEST },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -188,7 +189,66 @@ fun LoginScreen(
             ) {
                 Column(modifier = Modifier.padding(22.dp)) {
                     when (selectedTab) {
-                        // ── 1. CORPORATE / CLIENT LOGIN ────────────────────────
+                        // ── 1. GUEST EXPLORER MODE (DEFAULT & FIRST) ──────────
+                        LoginRoleTab.GUEST -> {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0xFFF0FDF4),
+                                    modifier = Modifier.padding(end = 10.dp)
+                                ) {
+                                    Icon(Icons.Default.Explore, contentDescription = null, tint = Color(0xFF16A34A), modifier = Modifier.padding(6.dp).size(20.dp))
+                                }
+                                Column {
+                                    Text("Guest Explorer Mode", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                                    Text("No password required! Explore app & all ChittorTech services", fontSize = 11.sp, color = TextSecondary)
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = Color(0xFFF8FAFC),
+                                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    GuestFeatureRow("✨ Browse full ChittorTech Services Catalog")
+                                    GuestFeatureRow("📊 Test Quick Launch Vyapar Billing & Sales features")
+                                    GuestFeatureRow("🤖 AI Chatbot with Kaira & Groq LPU sub-500ms answers")
+                                    GuestFeatureRow("🚀 1-Tap WhatsApp connect with Founder & Tech Leads")
+                                    GuestFeatureRow("💼 Request Free 15-Minute Project & Tech Consultation")
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            Button(
+                                onClick = {
+                                    onDirectRoleAccess(
+                                        "guest",
+                                        CtUser(
+                                            uid = "guest_visitor_${System.currentTimeMillis()}",
+                                            email = "guest@chittortech.in",
+                                            displayName = "Guest Explorer",
+                                            companyName = "Public Visitor",
+                                            role = "guest",
+                                            phone = ""
+                                        )
+                                    )
+                                },
+                                modifier = Modifier.fillMaxWidth().height(50.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F766E)), // Deep Emerald
+                                shape = RoundedCornerShape(14.dp)
+                            ) {
+                                Icon(Icons.Default.RocketLaunch, contentDescription = null, tint = Color.White)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Explore ChittorTech as Guest", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        // ── 2. CORPORATE / CLIENT LOGIN ────────────────────────
                         LoginRoleTab.CORPORATE -> {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Surface(
@@ -394,64 +454,6 @@ fun LoginScreen(
                                 Text("Instant Founder Mode (Kush Sharma)", color = Color(0xFFB45309), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
                         }
-
-                        // ── 3. GUEST EXPLORER MODE ────────────────────────────
-                        LoginRoleTab.GUEST -> {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = Color(0xFFF0FDF4),
-                                    modifier = Modifier.padding(end = 10.dp)
-                                ) {
-                                    Icon(Icons.Default.Explore, contentDescription = null, tint = Color(0xFF16A34A), modifier = Modifier.padding(6.dp).size(20.dp))
-                                }
-                                Column {
-                                    Text("Guest Explorer Mode", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                                    Text("No password required! Explore app & all ChittorTech services", fontSize = 11.sp, color = TextSecondary)
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Surface(
-                                shape = RoundedCornerShape(14.dp),
-                                color = Color(0xFFF8FAFC),
-                                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    GuestFeatureRow("✨ Browse full ChittorTech Services Catalog")
-                                    GuestFeatureRow("📊 Test Quick Launch Vyapar Billing & Sales features")
-                                    GuestFeatureRow("🚀 1-Tap WhatsApp connect with Founder & Tech Leads")
-                                    GuestFeatureRow("💼 Request Free 15-Minute Project & Tech Consultation")
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(20.dp))
-
-                            Button(
-                                onClick = {
-                                    onDirectRoleAccess(
-                                        "guest",
-                                        CtUser(
-                                            uid = "guest_visitor_${System.currentTimeMillis()}",
-                                            email = "guest@chittortech.in",
-                                            displayName = "Guest Explorer",
-                                            companyName = "Public Visitor",
-                                            role = "guest",
-                                            phone = ""
-                                        )
-                                    )
-                                },
-                                modifier = Modifier.fillMaxWidth().height(50.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F766E)), // Deep Emerald
-                                shape = RoundedCornerShape(14.dp)
-                            ) {
-                                Icon(Icons.Default.RocketLaunch, contentDescription = null, tint = Color.White)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Explore ChittorTech as Guest", fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                            }
-                        }
                     }
                 }
             }
@@ -476,7 +478,7 @@ fun LoginScreen(
                 color = TextMuted,
                 textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(28.dp))
         }
     }
 }
