@@ -29,7 +29,7 @@ fun ClientProfileScreen(
     user: CtUser,
     onLogout: () -> Unit,
     onUpdateUser: (CtUser, (Boolean, String?) -> Unit) -> Unit = { _, _ -> },
-    onChangePassword: (String, (Boolean, String?) -> Unit) -> Unit = { _, _ -> },
+    onChangePassword: (oldPassword: String, newPassword: String, (Boolean, String?) -> Unit) -> Unit = { _, _, _ -> },
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -310,8 +310,8 @@ fun ClientProfileScreen(
     if (showChangePasswordDialog) {
         ChangePasswordDialog(
             onDismiss = { showChangePasswordDialog = false },
-            onUpdatePassword = { newPassword, onComplete ->
-                onChangePassword(newPassword) { success, err ->
+            onUpdatePassword = { oldPassword, newPassword, onComplete ->
+                onChangePassword(oldPassword, newPassword) { success, err ->
                     if (success) {
                         showChangePasswordDialog = false
                     }
@@ -416,6 +416,19 @@ private fun EditAccountDetailsDialog(
     var isSaving by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
+    val dialogFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = Color(0xFF0F172A),
+        unfocusedBorderColor = Color(0xFF0F172A),
+        focusedLabelColor = Color(0xFF0F172A),
+        unfocusedLabelColor = Color(0xFF334155),
+        focusedTextColor = Color(0xFF0F172A),
+        unfocusedTextColor = Color(0xFF0F172A),
+        disabledTextColor = Color(0xFF1E293B),
+        disabledBorderColor = Color(0xFF475569),
+        disabledLabelColor = Color(0xFF334155),
+        disabledContainerColor = Color(0xFFF1F5F9)
+    )
+
     AlertDialog(
         onDismissRequest = { if (!isSaving) onDismiss() },
         shape = RoundedCornerShape(20.dp),
@@ -467,7 +480,8 @@ private fun EditAccountDetailsDialog(
                     leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = CtPrimaryBlue) },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = dialogFieldColors
                 )
 
                 // Registered Phone Number (Editable)
@@ -481,7 +495,8 @@ private fun EditAccountDetailsDialog(
                     leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = CtPrimaryBlue) },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = dialogFieldColors
                 )
 
                 // Enterprise / Company Name (Locked)
@@ -496,12 +511,7 @@ private fun EditAccountDetailsDialog(
                     supportingText = { Text("Company name is verified and cannot be changed", fontSize = 10.sp, color = TextMuted) },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        disabledTextColor = TextPrimary,
-                        disabledBorderColor = CtBorder,
-                        disabledLabelColor = TextSecondary,
-                        disabledContainerColor = Color(0xFFF8FAFC)
-                    )
+                    colors = dialogFieldColors
                 )
 
                 // Account / Company Email (Locked)
@@ -516,12 +526,7 @@ private fun EditAccountDetailsDialog(
                     supportingText = { Text("Official login email ID cannot be changed", fontSize = 10.sp, color = TextMuted) },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        disabledTextColor = TextPrimary,
-                        disabledBorderColor = CtBorder,
-                        disabledLabelColor = TextSecondary,
-                        disabledContainerColor = Color(0xFFF8FAFC)
-                    )
+                    colors = dialogFieldColors
                 )
             }
         },
@@ -569,14 +574,25 @@ private fun EditAccountDetailsDialog(
 @Composable
 private fun ChangePasswordDialog(
     onDismiss: () -> Unit,
-    onUpdatePassword: (String, (Boolean, String?) -> Unit) -> Unit
+    onUpdatePassword: (oldPassword: String, newPassword: String, (Boolean, String?) -> Unit) -> Unit
 ) {
+    var oldPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var oldPasswordVisible by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val dialogFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = Color(0xFF0F172A),
+        unfocusedBorderColor = Color(0xFF0F172A),
+        focusedLabelColor = Color(0xFF0F172A),
+        unfocusedLabelColor = Color(0xFF334155),
+        focusedTextColor = Color(0xFF0F172A),
+        unfocusedTextColor = Color(0xFF0F172A)
+    )
 
     AlertDialog(
         onDismissRequest = { if (!isSaving) onDismiss() },
@@ -596,7 +612,7 @@ private fun ChangePasswordDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    "Set a new password for your client portal account. Password must be at least 6 characters.",
+                    "Verify your current password to set a new password. New password must be at least 6 characters.",
                     fontSize = 12.sp,
                     color = TextSecondary,
                     lineHeight = 16.sp
@@ -617,6 +633,31 @@ private fun ChangePasswordDialog(
                         )
                     }
                 }
+
+                // Current / Old Password
+                OutlinedTextField(
+                    value = oldPassword,
+                    onValueChange = {
+                        oldPassword = it
+                        errorMessage = null
+                    },
+                    label = { Text("Current Password") },
+                    leadingIcon = { Icon(Icons.Default.Password, contentDescription = null, tint = CtPrimaryBlue) },
+                    trailingIcon = {
+                        IconButton(onClick = { oldPasswordVisible = !oldPasswordVisible }) {
+                            Icon(
+                                if (oldPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = null,
+                                tint = TextMuted
+                            )
+                        }
+                    },
+                    visualTransformation = if (oldPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = dialogFieldColors
+                )
 
                 // New Password
                 OutlinedTextField(
@@ -639,7 +680,8 @@ private fun ChangePasswordDialog(
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = dialogFieldColors
                 )
 
                 // Confirm Password
@@ -663,27 +705,36 @@ private fun ChangePasswordDialog(
                     visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = dialogFieldColors
                 )
             }
         },
         confirmButton = {
             Button(
                 onClick = {
+                    if (oldPassword.isBlank()) {
+                        errorMessage = "Please enter your current password."
+                        return@Button
+                    }
                     if (newPassword.length < 6) {
-                        errorMessage = "Password must be at least 6 characters long."
+                        errorMessage = "New password must be at least 6 characters long."
+                        return@Button
+                    }
+                    if (newPassword == oldPassword) {
+                        errorMessage = "New password must be different from current password."
                         return@Button
                     }
                     if (newPassword != confirmPassword) {
-                        errorMessage = "Passwords do not match. Please re-enter."
+                        errorMessage = "New passwords do not match. Please re-enter."
                         return@Button
                     }
                     isSaving = true
                     errorMessage = null
-                    onUpdatePassword(newPassword.trim()) { success, err ->
+                    onUpdatePassword(oldPassword.trim(), newPassword.trim()) { success, err ->
                         isSaving = false
                         if (!success) {
-                            errorMessage = err ?: "Failed to update password. You may also use 'Reset via Email'."
+                            errorMessage = err ?: "Failed to update password. Please check your current password."
                         }
                     }
                 },

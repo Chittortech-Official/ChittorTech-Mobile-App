@@ -228,9 +228,9 @@ fun ClientMainScreen(
                             }
                         }
                     },
-                    onChangePassword = { newPassword, onDone ->
+                    onChangePassword = { oldPassword, newPassword, onDone ->
                         scope.launch {
-                            val res = repository.updatePassword(newPassword, activeUser.email)
+                            val res = repository.updatePassword(oldPassword, newPassword, activeUser.email)
                             if (res.isSuccess) {
                                 onDone(true, null)
                                 NotificationHelper.showNotification(
@@ -239,7 +239,7 @@ fun ClientMainScreen(
                                     message = "Your portal access password has been updated securely."
                                 )
                             } else {
-                                 val err = res.exceptionOrNull()?.message ?: "Failed to update password"
+                                val err = res.exceptionOrNull()?.message ?: "Failed to update password"
                                 onDone(false, err)
                                 snackbarHostState.showSnackbar("Password change failed: $err")
                             }

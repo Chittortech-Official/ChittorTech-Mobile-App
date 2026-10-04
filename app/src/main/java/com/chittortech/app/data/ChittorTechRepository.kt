@@ -113,17 +113,52 @@ class ChittorTechRepository {
         }
     }
 
-    suspend fun updatePassword(newPassword: String, userEmail: String = ""): Result<Unit> {
+    suspend fun updatePassword(
+        oldPassword: String,
+        newPassword: String,
+        userEmail: String = ""
+    ): Result<Unit> {
         return try {
             val authUser = auth.currentUser
-            if (authUser != null) {
-                authUser.updatePassword(newPassword).await()
-            }
             val cleanEmail = (authUser?.email ?: userEmail).trim().lowercase()
+
+            // 1. Fetch user doc to verify old password against Firestore
+            val doc = if (cleanEmail.isNotBlank()) {
+                fetchUserDoc(cleanEmail, userEmail.trim(), authUser?.uid ?: "")
+            } else null
+
+            val firestorePassword = doc?.getString("Password") ?: doc?.getString("password")
+
+            // 2. If document has a password stored, verify it matches the entered old password
+            if (!firestorePassword.isNullOrBlank()) {
+                if (firestorePassword != oldPassword.trim()) {
+                    return Result.failure(Exception("Incorrect current password. Please enter your valid current password."))
+                }
+            }
+
+            // 3. If signed into Firebase Auth, re-authenticate with the old password
+            if (authUser != null && cleanEmail.isNotBlank()) {
+                try {
+                    val credential = com.google.firebase.auth.EmailAuthProvider.getCredential(cleanEmail, oldPassword.trim())
+                    authUser.reauthenticate(credential).await()
+                } catch (authEx: Exception) {
+                    if (firestorePassword.isNullOrBlank()) {
+                        return Result.failure(Exception("Incorrect current password. Authentication failed."))
+                    }
+                }
+            }
+
+            // 4. Update password in Firebase Auth
+            try {
+                authUser?.updatePassword(newPassword.trim())?.await()
+            } catch (_: Exception) {}
+
+            // 5. Update password in Firestore with clean standardized field
             if (cleanEmail.isNotBlank()) {
                 val updates = mapOf(
-                    "Password" to newPassword,
-                    "password" to com.google.firebase.firestore.FieldValue.delete()
+                    "Password" to newPassword.trim(),
+                    "password" to com.google.firebase.firestore.FieldValue.delete(),
+                    "updatedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
                 )
                 try {
                     db.collection("users").document(cleanEmail).set(updates, com.google.firebase.firestore.SetOptions.merge()).await()
