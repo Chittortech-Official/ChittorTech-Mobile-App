@@ -12,7 +12,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { email, name, role } = req.body || {};
+    const { email, name, role, platform } = req.body || {};
 
     if (!email || typeof email !== 'string' || !email.includes('@')) {
       return res.status(400).json({ success: false, message: 'A valid email address is required.' });
@@ -21,6 +21,8 @@ module.exports = async (req, res) => {
     const cleanEmail = email.trim().toLowerCase();
     const recipientName = name ? name.trim() : cleanEmail.split('@')[0];
     const userRole = (role || 'client').toUpperCase();
+    const isAdmin = userRole === 'ADMIN';
+    const appPlatform = (platform || 'ChittorTech Official Android Mobile App').trim();
 
     // 1. Generate 6-digit cryptographically secure OTP
     const otp = crypto.randomInt(100000, 999999).toString();
@@ -62,7 +64,20 @@ module.exports = async (req, res) => {
       }
     });
 
-    // 5. ChittorTech Branded HTML Email Template
+    const nowIST = new Date().toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      dateStyle: 'full',
+      timeStyle: 'medium'
+    });
+
+    // 5. Authentic ChittorTech HTML Email Template (Tailored for Mobile App)
+    const headerBg = isAdmin 
+      ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #334155 100%)' 
+      : 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)';
+    const accentColor = isAdmin ? '#d97706' : '#0284C7';
+    const portalName = isAdmin ? 'Administrator Control Room' : 'Corporate Client Portal';
+    const badgeText = isAdmin ? '🛡️ MOBILE APP · ADMIN CONTROL ROOM' : '💼 MOBILE APP · CLIENT PORTAL';
+
     const htmlTemplate = `
     <!DOCTYPE html>
     <html>
@@ -71,57 +86,82 @@ module.exports = async (req, res) => {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>ChittorTech Security Verification</title>
       <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7fa; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
         .wrapper { width: 100%; max-width: 540px; margin: 30px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; }
-        .header { background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%); padding: 32px 24px; text-align: center; color: #ffffff; }
-        .header h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: 0.5px; }
-        .header p { margin: 6px 0 0 0; font-size: 13px; color: rgba(255,255,255,0.85); }
-        .content { padding: 32px 28px; text-align: center; }
-        .greeting { font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 8px; text-align: left; }
-        .desc { font-size: 14px; color: #475569; line-height: 22px; text-align: left; margin-bottom: 24px; }
-        .otp-box { background: #f8fafc; border: 2px dashed #0284C7; border-radius: 12px; padding: 20px 10px; margin: 24px 0; text-align: center; }
-        .otp-code { font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #0284C7; font-family: 'Courier New', Courier, monospace; }
-        .expiry-tag { display: inline-block; margin-top: 8px; font-size: 12px; color: #dc2626; font-weight: 600; }
-        .security-warning { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 14px; text-align: left; font-size: 12px; color: #92400e; border-radius: 6px; margin-top: 24px; line-height: 18px; }
-        .footer { background: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; }
+        .header { background: ${headerBg}; padding: 32px 24px; text-align: center; color: #ffffff; }
+        .header h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 0.5px; }
+        .header p { margin: 6px 0 0 0; font-size: 12.5px; color: rgba(255,255,255,0.85); }
+        .content { padding: 30px 28px; }
+        .badge { display: inline-block; background: ${isAdmin ? '#fef3c7' : '#e0f2fe'}; border: 1px solid ${isAdmin ? '#fde68a' : '#bae6fd'}; color: ${isAdmin ? '#b45309' : '#0369a1'}; font-size: 11px; font-weight: 800; letter-spacing: 0.8px; padding: 6px 12px; border-radius: 20px; text-transform: uppercase; margin-bottom: 16px; }
+        .greeting { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+        .desc { font-size: 13.5px; color: #475569; line-height: 22px; margin-bottom: 20px; }
+        .info-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; margin-bottom: 22px; font-size: 12.5px; }
+        .info-row { display: flex; justify-content: space-between; padding: 4px 0; }
+        .info-label { color: #64748b; font-weight: 600; }
+        .info-val { color: #0f172a; font-weight: 700; }
+        .otp-box { background: #ffffff; border: 2px dashed ${accentColor}; border-radius: 12px; padding: 20px 10px; margin: 18px 0; text-align: center; }
+        .otp-code { font-size: 38px; font-weight: 800; letter-spacing: 8px; color: ${accentColor}; font-family: 'Courier New', Courier, monospace; }
+        .expiry-tag { display: inline-block; margin-top: 8px; font-size: 12px; color: #dc2626; font-weight: 700; }
+        .security-warning { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 14px; font-size: 12px; color: #92400e; border-radius: 6px; margin-top: 22px; line-height: 18px; }
+        .footer { background: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11.5px; color: #64748b; }
       </style>
     </head>
     <body>
       <div class="wrapper">
         <div class="header">
-          <h1>ChittorTech Security</h1>
-          <p>Two-Factor Authentication · ${userRole} Portal</p>
+          <h1>CHITTORTECH SECURITY</h1>
+          <p>Two-Factor Authentication · ${portalName}</p>
         </div>
         <div class="content">
+          <div class="badge">${badgeText}</div>
           <div class="greeting">Hello ${recipientName},</div>
           <div class="desc">
-            We received a sign-in request for your ChittorTech account. Use the one-time verification code below to complete your authentication.
+            A sign-in request was initiated for your account on the <strong>${appPlatform}</strong>. Use the one-time security code below to authorize your session.
+          </div>
+
+          <div class="info-card">
+            <div class="info-row">
+              <span class="info-label">Application:</span>
+              <span class="info-val">${appPlatform}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Target Portal:</span>
+              <span class="info-val">${portalName}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Timestamp:</span>
+              <span class="info-val">${nowIST}</span>
+            </div>
           </div>
 
           <div class="otp-box">
             <div class="otp-code">${otp}</div>
-            <div class="expiry-tag">Valid for 5 minutes only</div>
+            <div class="expiry-tag">⏳ Valid for 5 minutes only</div>
           </div>
 
           <div class="security-warning">
-            <strong>Security Notice:</strong> Never share this OTP with anyone. ChittorTech engineers and administrators will never contact you asking for this code. If you did not attempt to log in, please secure your account immediately.
+            <strong>Security Notice:</strong> Never share this OTP with anyone. ChittorTech administrators and engineers will never request this code. If you did not initiate this login from the mobile app, secure your account immediately.
           </div>
         </div>
         <div class="footer">
           &copy; 2026 ChittorTech (chittortech.in) · All rights reserved.<br>
-          Automated security dispatch from business@chittortech.in
+          Authorized security dispatch from business@chittortech.in
         </div>
       </div>
     </body>
     </html>
     `;
 
+    const subjectLine = isAdmin
+      ? `🛡️ [Admin Access] ChittorTech Mobile App - OTP: ${otp}`
+      : `🔐 [Client Portal] ChittorTech Mobile App - OTP: ${otp}`;
+
     // 6. Send the Email
     await transporter.sendMail({
       from: `"ChittorTech Security" <${smtpUser}>`,
       to: cleanEmail,
-      subject: `Your ChittorTech Security Code: ${otp}`,
-      text: `Your ChittorTech one-time security code is ${otp}. Valid for 5 minutes. Do not share this code.`,
+      subject: subjectLine,
+      text: `Your ChittorTech one-time security code for ${appPlatform} is ${otp}. Valid for 5 minutes. Do not share this code.`,
       html: htmlTemplate
     });
 
@@ -136,7 +176,7 @@ module.exports = async (req, res) => {
     console.error('Error dispatching OTP email:', error);
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to dispatch verification email via Titan Mail.'
+      message: error.message || 'Failed to dispatch verification email via GoDaddy SMTP.'
     });
   }
 };

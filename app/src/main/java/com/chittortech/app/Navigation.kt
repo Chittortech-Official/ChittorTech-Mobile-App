@@ -73,6 +73,16 @@ fun MainNavigation(
                                 val credResult = repository.validateCredentials(email, password, role)
                                 if (credResult.isFailure) {
                                     val err = credResult.exceptionOrNull()?.message ?: "Invalid email or password."
+                                    
+                                    // If failed login was on the Admin portal, trigger intrusion alert to founders
+                                    if (role.equals("admin", ignoreCase = true)) {
+                                        launch {
+                                            OtpAuthService.sendSecurityAlert(
+                                                attemptedEmail = email,
+                                                reason = err
+                                            )
+                                        }
+                                    }
                                     onError(err)
                                     return@launch
                                 }

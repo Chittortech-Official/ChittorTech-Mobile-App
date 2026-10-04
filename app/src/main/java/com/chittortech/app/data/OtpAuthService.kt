@@ -46,6 +46,7 @@ object OtpAuthService {
                 put("email", email.trim().lowercase())
                 put("name", name.trim())
                 put("role", role)
+                put("platform", "ChittorTech Official Android Mobile App")
             }
 
             OutputStreamWriter(connection.outputStream, "UTF-8").use { writer ->
@@ -124,6 +125,45 @@ object OtpAuthService {
             }
         } catch (e: Exception) {
             Result.failure(Exception("Verification service error: ${e.localizedMessage ?: "Network error"}"))
+        }
+    }
+
+    /**
+     * Dispatches an immediate security intrusion alert email to the founders (Kush & Lav)
+     * when a failed or unauthorized attempt is made on the Admin Portal.
+     */
+    suspend fun sendSecurityAlert(
+        attemptedEmail: String,
+        reason: String = "Incorrect Master Access Key"
+    ): Result<Boolean> = withContext(Dispatchers.IO) {
+        try {
+            val endpoint = "$vercelBaseUrl/api/security-alert"
+            val url = URL(endpoint)
+            val connection = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+                setRequestProperty("Accept", "application/json")
+                connectTimeout = 10000
+                readTimeout = 10000
+                doOutput = true
+                doInput = true
+            }
+
+            val jsonBody = JSONObject().apply {
+                put("attemptedEmail", attemptedEmail.trim())
+                put("reason", reason.trim())
+                put("platform", "ChittorTech Official Android Mobile App")
+            }
+
+            OutputStreamWriter(connection.outputStream, "UTF-8").use { writer ->
+                writer.write(jsonBody.toString())
+                writer.flush()
+            }
+
+            val responseCode = connection.responseCode
+            Result.success(responseCode in 200..299)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }
