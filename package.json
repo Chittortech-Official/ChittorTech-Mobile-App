@@ -1,0 +1,8 @@
+{
+  "name": "chittortech-otp-service",
+  "version": "1.0.0",
+  "description": "ChittorTech Official 2FA OTP Service via Titan Mail (business@chittortech.in)",
+  "dependencies": {
+    "nodemailer": "^6.9.13"
+  }
+}
