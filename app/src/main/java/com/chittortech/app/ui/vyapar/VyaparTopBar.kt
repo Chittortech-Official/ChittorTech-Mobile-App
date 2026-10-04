@@ -23,7 +23,7 @@ import com.chittortech.app.theme.*
 @Composable
 fun VyaparTopBar(
     businessName: String = "ChittorTech",
-    notificationCount: Int = 2,
+    notificationCount: Int = 0,
     onNotificationClick: () -> Unit = {}
 ) {
     Surface(

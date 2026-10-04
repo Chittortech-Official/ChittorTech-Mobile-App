@@ -450,7 +450,7 @@ fun VyaparHomeScreen(
                                 horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 Button(
-                                    onClick = onOpenAiChat,
+                                    onClick = onExploreServices,
                                     shape = RoundedCornerShape(14.dp),
                                     colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
@@ -459,14 +459,14 @@ fun VyaparHomeScreen(
                                         .height(48.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.AutoAwesome,
+                                        imageVector = Icons.Default.Layers,
                                         contentDescription = null,
                                         tint = Color(0xFF0284C7),
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = "Ask ChittorTech GPT",
+                                        text = "Explore Services",
                                         fontSize = 11.5.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF0F172A),

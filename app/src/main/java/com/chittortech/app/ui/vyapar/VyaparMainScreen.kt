@@ -12,6 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -31,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chittortech.app.data.ChittorTechRepository
+import com.chittortech.app.model.AppNotification
 import com.chittortech.app.model.CtUser
 import com.chittortech.app.theme.*
 import kotlinx.coroutines.launch
@@ -49,10 +51,18 @@ fun VyaparMainScreen(
     // Live streams from Firebase Firestore
     val invoices by repository.observeAllInvoices().collectAsStateWithLifecycle(initialValue = emptyList())
     val clients by repository.observeAllClients().collectAsStateWithLifecycle(initialValue = emptyList())
+    val notifications by repository.observeNotifications().collectAsStateWithLifecycle(initialValue = emptyList())
 
-    // Dialog & Notification States
+    // Dialog & Notification Read States
     var showNotificationsDialog by remember { mutableStateOf(false) }
-    var notificationCount by remember { mutableStateOf(2) }
+    val notifPrefs = remember { context.getSharedPreferences("ct_notifs_prefs", android.content.Context.MODE_PRIVATE) }
+    var readNotifIds by remember {
+        mutableStateOf(notifPrefs.getStringSet("read_ids", emptySet())?.toSet() ?: emptySet())
+    }
+
+    val unreadCount = remember(notifications, readNotifIds) {
+        notifications.count { it.id !in readNotifIds }
+    }
 
     // Keyboard (IME) detection to hide bottom bar when typing in Chatbot / fields
     val imeBottom = WindowInsets.ime.getBottom(LocalDensity.current)
@@ -63,7 +73,7 @@ fun VyaparMainScreen(
         topBar = {
             VyaparTopBar(
                 businessName = if (user.companyName.isNotBlank() && user.companyName != "ChittorTech Solutions" && user.companyName != "Public Visitor") user.companyName else "ChittorTech",
-                notificationCount = notificationCount,
+                notificationCount = unreadCount,
                 onNotificationClick = { showNotificationsDialog = true }
             )
         },
@@ -94,7 +104,7 @@ fun VyaparMainScreen(
                         clients = clients,
                         onSaleReportClick = { currentTab = VyaparTab.SERVICES },
                         onExploreServices = { currentTab = VyaparTab.SERVICES },
-                        onOpenAiChat = { currentTab = VyaparTab.AI }
+                        onOpenAiChat = { currentTab = VyaparTab.SERVICES }
                     )
                 }
                 VyaparTab.SERVICES -> {
@@ -110,15 +120,17 @@ fun VyaparMainScreen(
                         onPurchaseClick = { currentTab = VyaparTab.SERVICES },
                         onExpensesClick = { currentTab = VyaparTab.SERVICES },
                         onReportsClick = { currentTab = VyaparTab.GET_DESKTOP },
-                        onHelpdeskClick = { currentTab = VyaparTab.AI },
+                        onHelpdeskClick = {
+                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                data = Uri.parse("https://wa.me/917597451057?text=Namaste%20Lav%20Sir!%20I%20need%20assistance%20regarding%20ChittorTech%20services.")
+                            }
+                            context.startActivity(intent)
+                        },
                         onSignOut = {
                             repository.signOut()
                             onSignOut()
                         }
                     )
-                }
-                VyaparTab.AI -> {
-                    ChittorTechChatbotScreen()
                 }
                 VyaparTab.GET_DESKTOP -> {
                     VyaparDesktopScreen()
@@ -142,10 +154,12 @@ fun VyaparMainScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Notifications", fontWeight = FontWeight.Bold, color = VyaparDark, fontSize = 18.sp)
                     }
-                    if (notificationCount > 0) {
+                    if (unreadCount > 0) {
                         TextButton(
                             onClick = {
-                                notificationCount = 0
+                                val allIds = notifications.map { it.id }.toSet()
+                                readNotifIds = readNotifIds + allIds
+                                notifPrefs.edit().putStringSet("read_ids", readNotifIds).apply()
                                 Toast.makeText(context, "All notifications marked as read", Toast.LENGTH_SHORT).show()
                             },
                             contentPadding = PaddingValues(0.dp)
@@ -156,33 +170,70 @@ fun VyaparMainScreen(
                 }
             },
             text = {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    item {
-                        NotificationCardItem(
-                            title = "🎉 ChittorTech GPT v2.4 Live",
-                            time = "Today, 4:30 PM",
-                            detail = "Our dedicated AI Assistant powered by Groq Llama 3 70B is ready to answer questions about mobile apps, cloud architectures, and publishing.",
-                            isUnread = notificationCount > 0
-                        )
+                if (notifications.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 28.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(54.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFF1F5F9)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.NotificationsNone,
+                                    contentDescription = null,
+                                    tint = Color(0xFF94A3B8),
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = "No Notifications",
+                                fontWeight = FontWeight.Bold,
+                                color = VyaparDark,
+                                fontSize = 15.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "You're all caught up! New updates from admin will appear here.",
+                                color = Color(0xFF64748B),
+                                fontSize = 12.sp,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
+                        }
                     }
-                    item {
-                        NotificationCardItem(
-                            title = "🚀 Google Play 12-Tester Cohort",
-                            time = "Yesterday",
-                            detail = "New closed testing batch opened for indie developers and startups. 100% Google Play approval compliance.",
-                            isUnread = notificationCount > 1
-                        )
-                    }
-                    item {
-                        NotificationCardItem(
-                            title = "💼 Tech Stack Consultation",
-                            time = "2 days ago",
-                            detail = "Book a free 15-minute architecture and tech audit with our engineering team via the ChittorTech agency portal.",
-                            isUnread = false
-                        )
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(notifications) { notif ->
+                            val isUnread = notif.id !in readNotifIds
+                            NotificationCardItem(
+                                title = notif.title,
+                                time = notif.timestamp?.toDate()?.let { d ->
+                                    java.text.SimpleDateFormat("dd MMM, hh:mm a", java.util.Locale.getDefault()).format(d)
+                                } ?: "Just now",
+                                detail = notif.message,
+                                isUnread = isUnread,
+                                onClick = {
+                                    if (isUnread) {
+                                        readNotifIds = readNotifIds + notif.id
+                                        notifPrefs.edit().putStringSet("read_ids", readNotifIds).apply()
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
             },
@@ -207,13 +258,17 @@ private fun NotificationCardItem(
     title: String,
     time: String,
     detail: String,
-    isUnread: Boolean
+    isUnread: Boolean,
+    onClick: () -> Unit = {}
 ) {
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = if (isUnread) Color(0xFFEFF6FF) else Color(0xFFF8FAFC),
         border = BorderStroke(1.dp, if (isUnread) Color(0xFFBFDBFE) else Color(0xFFE2E8F0)),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(

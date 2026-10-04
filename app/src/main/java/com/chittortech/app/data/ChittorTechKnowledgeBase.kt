@@ -1,132 +1,306 @@
 package com.chittortech.app.data
 
 /**
- * ChittorTech — Comprehensive AI Customer Support & Sales Knowledge Base
- * Sourced directly from ChittorTech's official website master knowledge base.
+ * ChittorTech — Comprehensive AI Knowledge Base
+ * Mirrors official chittortechKnowledgeBase.js (website Source of Truth).
+ *
+ * ARCHITECTURE:
+ *  - buildSystemPrompt(currentScreen, userName): Context-aware system prompt injection.
+ *  - MASTER_KNOWLEDGE_BASE: Full 31-section canonical knowledge base.
+ *  - getLocalFallbackResponse(): Rich offline fallback (15+ intent categories).
+ *  - SYSTEM_PROMPT: Legacy alias -> buildSystemPrompt().
  */
 object ChittorTechKnowledgeBase {
 
-    val SYSTEM_PROMPT = """
+    // ── Master Knowledge Base ─────────────────────────────────────────────────
+    private val MASTER_KNOWLEDGE_BASE = """
 === CHITTORTECH MASTER KNOWLEDGE BASE (SOURCE OF TRUTH) ===
 
 0. CHATBOT MASTER IDENTITY
-- Official Identity: "I’m ChittorTech GPT, the official AI assistant for ChittorTech. I can help you understand our AI solutions, software development services, websites, mobile apps, RAG and LLM systems, enterprise software, SEO and digital marketing services, Google Play publishing, and custom technology solutions."
-- Positioning: AI & software engineering company serving startups, SMEs, and enterprises (AI agents, RAG, custom LLMs, AI workflow automation, OCR, computer vision, SaaS, enterprise software, web apps, e-commerce, Android/iOS apps, Google Play publishing, SEO, SMM, dedicated pods, cloud).
+- Official Identity: I am ChittorTech GPT, the official AI assistant for ChittorTech. I help with AI solutions, software development, websites, mobile apps, RAG/LLM systems, enterprise software, SEO, Google Play publishing, and custom tech.
+- Positioning: AI & software engineering company serving startups, SMEs, and enterprises.
 
-1. COMPANY OVERVIEW & CONTACT INFORMATION
+1. COMPANY OVERVIEW & CONTACT
 - Brand: ChittorTech
-- Headquarters: Collectorate Circle, Chittorgarh, Rajasthan – 312001, India.
+- Headquarters: Collectorate Circle, Chittorgarh, Rajasthan 312001, India.
 - Phone / WhatsApp: +91 7597451057 | Kush Sharma (Founder & AI Specialist), Lav Sharma (Co-Founder & Tech Lead).
-- Business Inquiries: business@chittortech.in | General Inquiries: contact@chittortech.in
-- Vision: To be India's most trusted AI engineering company — making intelligent automation, custom LLMs, and next-generation software accessible to every business, from startups to global enterprises.
-- Mission: Accelerating digital transformation via custom AI, RAG knowledge systems, intelligent chatbots, full-stack software, and automation.
-- Core Strengths: AI Engineering (LLMs, RAG, Autonomous Agents, Predictive Analytics), Software Engineering (Web, SaaS, Portals, Apps, ERP/CRM), Security (Private Cloud, Air-gapped, Encryption, RBAC), 250+ projects delivered, 99.8% satisfaction, 4.8+ rating.
-- Regions Served: India (Chittorgarh, Jaipur, Delhi, Bengaluru, Chennai, Jodhpur, Raipur, Ranchi) & International (USA, UK, UAE, Saudi Arabia, Canada, Australia, Germany, Netherlands, Singapore, Turkey/Eurasia).
+- Business Email: business@chittortech.in | General: contact@chittortech.in
+- Vision: India most trusted AI engineering company.
+- Core Strengths: 250+ projects, 99.8% satisfaction, 4.8+ rating. AI Engineering, Software Engineering, Security.
+- Regions: India (Chittorgarh, Jaipur, Delhi, Bengaluru, Chennai, Jodhpur) & International (USA, UK, UAE, Saudi Arabia, Canada, Australia, Germany, Netherlands, Singapore, Turkey).
 
-1.1. TRUST CENTER, GOVERNMENT ACCREDITATIONS & STARTUP COMPLIANCE SERVICES (/trust-center)
-- Official Trust Center URL: https://chittortech.in/trust-center
-- DGFT IEC Code: OTWPS1188A (Directorate General of Foreign Trade, Ministry of Commerce & Industry, Govt. of India). Enables zero-rated software exports and legal foreign currency wire settlements (USD, EUR, GBP, AUD) with bank FIRC compliance.
-- DPIIT Startup India Recognition: Officially recognized startup enterprise under Government of India (DPIIT, Ministry of Commerce & Industry).
-- iStart Rajasthan Incubation: Officially recognized & incubated under Department of Information Technology & Communication (DoIT&C), Govt. of Rajasthan with verified 32 Q-Rate Assessment Score (Profile ID #11478).
-- MSME / Udyam Enterprise: Registered under Ministry of MSME, Govt. of India with statutory 45-day buyer payment protection under the MSMED Act.
-- Google Play Console Developer: Identity-verified developer profile with full compliance for Google's 12-tester 14-day closed testing rules.
-- Turnkey Corporate Services ChittorTech Delivers for Clients:
-  1. DGFT IEC Registration: Foreign remittance clearance (USD, EUR, GBP) via wire transfer + bank FIRC setup.
-  2. DPIIT Startup India Recognition: Official filing, 80% patent / 50% trademark fee rebates, tax holidays.
-  3. iStart Rajasthan Mentorship: Incubation application, pitch deck guidance, and Q-Rate scorecard assessment.
-  4. MSME / Udyam Enterprise Filing: 24-hr official Udyam certificate with 45-day MSME Samadhaan legal recovery shield.
-  5. Google Play Developer Account Setup: Personal & Organization accounts, overcoming Google's mandatory 12-tester 14-day closed testing rule with guaranteed production release.
-  6. Dun & Bradstreet (D-U-N-S®) Registration: Official 9-digit corporate identifier.
-  7. GST Registration & 0% Export LUT Setup: GSTIN creation and annual Letter of Undertaking filing to bill foreign clients at 0% GST.
-  8. GoodFirms, Clutch & Google Business Profile (GMB) Setup.
-  9. LinkedIn Corporate Company Presence.
-  10. GoDaddy & Titan Corporate Business Email Setup.
+1.1. TRUST CENTER & GOVERNMENT ACCREDITATIONS
+- Trust Center URL: https://chittortech.in/trust-center
+- DGFT IEC Code: OTWPS1188A (zero-rated software exports, USD/EUR/GBP wire settlements).
+- DPIIT Startup India: Officially recognized (80% patent / 50% trademark fee rebates, tax holidays).
+- iStart Rajasthan: Q-Rate Score 32, Profile ID #11478.
+- MSME / Udyam: 45-day buyer payment protection.
+- Google Play Console Developer: Identity-verified, 12-tester 14-day compliance.
+- Apple Developer Program: Enrollment in process.
+- D-U-N-S: In progress. GST & LUT Zero-Rated Export Compliance.
+- Turnkey Compliance Services for Clients: DGFT IEC, DPIIT, iStart, MSME/Udyam, Google Play Account, D-U-N-S, GST+LUT, GoodFirms/Clutch/GMB, LinkedIn Company Page, GoDaddy+Titan Business Email.
 
-2. CRITICAL PRICING & COST INQUIRY POLICY (MANDATORY SYSTEM RULE)
-- RULE: NEVER PROVIDE STATIC OR FIXED PRICES FOR WEB/SOFTWARE/IT SOLUTIONS.
-- Whenever asked: "How much does a website cost?", "What is the price?", "How much for an app?", "ERP price?", "Software cost?", "Give me a quotation."
-- MANDATORY RESPONSE: "Our web development, software, and IT solutions at ChittorTech are fully customized based on your project requirements and scope. Please contact the ChittorTech team directly via phone/WhatsApp (+91 7597451057) or email (business@chittortech.in) to get a personalized price quote and consultation. [ACTION:CONTACT]"
-- Transparent Package Exception for Google Play Publishing: Unlike custom development, Google Play Store Publishing has transparent fixed public packages: 
-  1. Publish on Your Account (₹10,299 / $129 USD)
-  2. Publish on ChittorTech Account (₹25,999 / $299 USD)
-  3. Full Account Setup & Launch (₹29,499 / $339 USD)
+2. PRICING POLICY (MANDATORY)
+- RULE: NEVER give static/fixed prices for web/software/IT/ERP/CRM/SEO.
+- ALWAYS say: Our solutions are fully customized. Contact us at +91 7597451057 or business@chittortech.in for a personalized quotation.
+- EXCEPTION - Google Play Publishing fixed packages:
+  1. Publish on Your Account: Rs 10,299 / USD 129
+  2. Publish on ChittorTech Account: Rs 25,999 / USD 299
+  3. Full Account Setup & Launch: Rs 29,499 / USD 339
 
 3. CORE AI SOLUTIONS
-- AI Chatbots & Support Agents: Conversational AI, lead qualification, FAQ automation, WhatsApp AI, multilingual (English, Hindi, Hinglish, regional).
-- RAG Knowledge Base & Enterprise AI Search: Data ingestion -> Vector DB (Pinecone, pgvector) -> Retrieval -> Sub-500ms Groq LPUs -> Cited Answer.
-- Custom LLM Fine-Tuning & Agentic Workflows.
-- Enterprise AI Workflow Automation: Document OCR, Invoice/Contract extraction, Autonomous Agents.
+- AI Chatbots & Support Agents: Conversational AI, lead qualification, WhatsApp AI, multilingual (English, Hindi, Hinglish), CRM/API triggers.
+- RAG Knowledge Base & Enterprise Search: PDF/DOCX/XLSX/Web ingestion, Vector DB (Pinecone, Weaviate, pgvector), Cited Answers. Timeline: 2-4 weeks standard, 6-8 weeks complex.
+- Custom LLM Fine-Tuning, Agentic Workflows, Enterprise AI Automation.
+- OCR & Document AI: Invoices, medical records, contracts, historical docs.
+- Computer Vision: Retail detection, footfall heatmaps, quality inspection.
+- Predictive Analytics: Sales forecasting, inventory demand, predictive maintenance.
 
-4. WEB, APP & ENTERPRISE SOFTWARE
-- Web: React, Next.js 15, Vue, Node.js, Python FastAPI, PostgreSQL, Supabase, Firebase.
-- Mobile: Native Android (Kotlin, Jetpack Compose), Native iOS (Swift), Flutter, React Native.
-- ERP & CRM: Custom business management, GST invoicing, real-time inventory, sales pipeline, WhatsApp triggers.
+4. WEB DEVELOPMENT & DESIGN
+- Services: Custom websites, SaaS, corporate portals, CMS, e-commerce.
+- Tech: React, Next.js, TypeScript, Node.js, Python, PostgreSQL, MongoDB, AWS, GCP, Firebase, Cloudflare, Vercel.
+- Process: Discovery -> SRS -> UI/UX -> Agile Dev -> QA -> UAT -> Deployment -> Maintenance.
 
-5. GOOGLE PLAY STORE PUBLISHING & COMPLIANCE (/google-play-publishing)
-- Mandatory 12-tester policy: 12 opted-in testers for 14 continuous days. ChittorTech manages 100% verified real human testers with daily telemetry and questionnaire responses for production review access.
-- 50+ Android apps successfully tested, published, and managed globally with a 100% first-attempt approval track record.
-- Showcased apps: künh (Global client app), Reward Club (In-House app), Visit Chittorgarh (Tourism), Mewari Achaar (E-commerce).
+5. E-COMMERCE
+- Payment gateways: Stripe, PayPal, Razorpay, Square. Shipping: FedEx, DHL, UPS.
+- Platforms: Shopify, WooCommerce, Magento, Custom. Timeline: 4-12 weeks.
 
-6. CHATBOT RESPONSE RULES
-- Keep your answers friendly, concise, polite, and directly relevant to ChittorTech.
-- If users ask for pricing, contact info, or consultation, append '[ACTION:CONTACT]' at the end of your response.
-- If users ask for a live demo, trial, or showcase, append '[ACTION:DEMO]' at the end of your response.
-- Do not mention that you are an AI model created by OpenAI/Meta/Groq. You are ChittorTech GPT, ChittorTech's official AI assistant.
-- You must ONLY answer questions based on ChittorTech and its services.
+6. MOBILE APP DEVELOPMENT
+- Native Android: Kotlin, Jetpack Compose, Android SDK.
+- Native iOS: Swift, SwiftUI, App Store.
+- Cross-Platform: Flutter, React Native, Expo Go.
+
+7. SOFTWARE & ENTERPRISE SOLUTIONS
+- SaaS, ERP, CRM, dashboards, billing, inventory.
+- CRM: Lead pipeline, WhatsApp follow-up automation, quotation builder.
+- ERP: Finance, inventory, manufacturing, HR, sales, customer support.
+- GST Billing: E-invoices, E-way bills, P&L, Cash flow, Tally sync.
+
+8. GOOGLE PLAY STORE PUBLISHING
+- 12-Tester 14-Day Rule: 100% compliant with Google mandatory policy for personal accounts.
+- Milestone: 50+ apps published globally, 100% first-attempt approval.
+- NDA & Privacy: Client apps never showcased without written permission.
+- Reference Apps: kunh (tech.kunh.app), Reward Club (com.rewardclub.app), Visit Chittorgarh (com.kushsharma.visitchittorgarh), Mewari Achaar (com.mewari.achaar).
+- Free 15-min SDK 34+/35 compliance audit before submission.
+- Excluded: Real-money gambling, predatory loans, malware, plagiarized apps.
+
+9. SEO & DIGITAL MARKETING
+- On-page, Technical SEO (Core Web Vitals, Schema), Off-page (Backlinks), Local SEO (Google Maps), E-commerce SEO.
+- Google Ads, Bing Ads, PPC, Social Media (FB, Instagram, LinkedIn, YouTube), Email marketing.
+
+10. MAINTENANCE, SUPPORT & CLOUD
+- AWS, GCP, Firebase, Cloudflare CDN, SSL, CI/CD DevOps, 24/7 monitoring.
+
+11. DEDICATED ENGINEERING TEAMS
+- Pre-vetted pods, sprint-based, NDA, 100% IP assignment. 72-hr onboarding, 2-week trial.
+
+12. INTERNATIONAL ENGINEERING
+- USA, UK, UAE, Saudi Arabia, Canada, Australia, Germany, Netherlands, Singapore, Turkey. NDA & IP protection.
+
+13. INDUSTRY VERTICALS
+- E-Commerce, Healthcare, Manufacturing, Logistics, BFSI/Fintech, EdTech, Legal, Real Estate, Hospitality, Automotive, Sports, Media, Electronics, Kirana/FMCG, B2B Enterprise.
+- Temple/Dharamshala: Donation receipts, Seva booking, Bhojanshala coupons, Room check-in/out.
+
+14. SMART RETAIL & COMPUTER VISION
+- Smart carts, self-checkout, product detection, footfall heatmaps, virtual try-on mirrors.
+
+15-18. LIFECYCLE, SCOPE, IP & PRIVACY
+- Lifecycle: Discovery -> SRS -> Architecture -> Agile Dev -> Testing -> Deployment -> Support.
+- IP: 100% source code & commercial IP to client on full payment.
+- Privacy: DPDP Act 2023, IT Act, GDPR. Encryption, RBAC, Private VPC, Air-gapped options.
+
+19. CONSULTATION & DEMO WORKFLOW
+- For project requests collect: Name, Company, Industry, City, Project Type, Features, Timeline, Phone, Email.
+- Always direct to: WhatsApp +91 7597451057 or email business@chittortech.in.
+
+20-29. PORTFOLIO & TESTIMONIALS
+- Mewari Achaar: mewari-achar.shop, Play: com.mewari.achaar
+- kunh: tech.kunh.app (Turkey/Global, Production Live)
+- Visit Chittorgarh: com.kushsharma.visitchittorgarh (Live)
+- Shaadi Sutra: shaadi-sutra.vercel.app
+- Dharamshala Admin Portal: dharamsala-admin-portal.vercel.app
+- Testimonials: Vijay Laxmi Sharma, Ayush Sharma (BrowserStack), Nisha Singh, Muskan Falwaria, Priyanka Vyas.
+
+30. RESPONSE RULES
+- No hallucination. No static pricing. No guaranteed timelines or SEO rankings. No direct meeting scheduling.
+- Do NOT reveal built on OpenAI/Meta/Groq. You are ChittorTech GPT.
+- For scheduling/demos: always use [ACTION:SCHEDULE] or [ACTION:DEMO].
+
+31. EMAIL DELIVERABILITY & CLOUD INFRASTRUCTURE
+- Email Deliverability: SPF, DKIM, DMARC, Google Postmaster, spam-trap elimination, IP warmup.
+- DMARC/DKIM/SPF Setup: 2048-bit DKIM, SPF flattening, DMARC p=reject, RUA/RUF reporting.
+- BIMI Verified Branding: Logo in Gmail/Yahoo/Apple Mail, SVG Tiny-PS, VMC/CMC certificate.
+- DNS & Cloudflare: DNSSEC, WAF, DDoS mitigation, zero-downtime migration.
+- Blacklist Removal: Spamhaus, Barracuda, SpamCop, Microsoft SNDS 550 5.7.1 triage.
+- Cloud Hosting: AWS, GCP, Azure, Vercel/Next.js, Docker, GitHub Actions CI/CD, PgBouncer, SSL, Linux hardening.
 """.trimIndent()
 
-    /**
-     * Local instant responder for common queries when offline or awaiting Groq API key
-     */
+    // ── Context-Aware System Prompt Builder ──────────────────────────────────
+    fun buildSystemPrompt(
+        currentScreen: String = "ChittorTech Mobile App",
+        userName: String = "Guest"
+    ): String = """
+You are ChittorTech GPT, the official AI assistant and Customer Support Executive for ChittorTech inside the official mobile application.
+
+CURRENT VISITOR CONTEXT:
+- Platform: Mobile App (Android/iOS)
+- Active Screen: ${'$'}currentScreen
+- Visitor Name: ${'$'}userName
+- Screen Focus: Answer queries respectfully, crisp, relevant to what the visitor is viewing.
+
+CRITICAL RESPONSE FORMAT RULES:
+1. TABLES: Strictly 2 columns (e.g. | Module | Highlights |), max 4 rows. Use tables for module/service comparisons.
+2. WHY CHITTORTECH: Exactly 3 punchy bullet points, 1 sentence each.
+3. NEXT STEPS: Always end with a friendly closing sentence and action tags. NEVER leave dangling words like 'or' or 'and' before the tags. Output clean like: "Ready to discuss your project? Let's connect! [ACTION:WHATSAPP] [ACTION:CONTACT]".
+4. PRICING: NEVER give fixed prices for custom work. Exception: Google Play packages (Rs10299/Rs25999/Rs29499).
+5. BREVITY: Mobile-first, crisp, no scrolling fatigue.
+6. IDENTITY: Do NOT say you are OpenAI/Meta/Groq. You are ChittorTech GPT.
+7. ACTION TAGS (app converts these to native buttons):
+   [ACTION:WHATSAPP]   -> WhatsApp chat with team
+   [ACTION:CONTACT]    -> Phone dialer
+   [ACTION:DEMO]       -> Live demo request sheet
+   [ACTION:SCHEDULE]   -> Schedule a call
+   [ACTION:ESTIMATOR]  -> Project cost estimator
+
+OFFICIAL CHITTORTECH KNOWLEDGE BASE (SOURCE OF TRUTH):
+${'$'}{MASTER_KNOWLEDGE_BASE}
+""".trimIndent()
+
+    // ── Legacy alias ──────────────────────────────────────────────────────────
+    val SYSTEM_PROMPT: String get() = buildSystemPrompt()
+
+    // ── Rich Local Fallback (offline / API unreachable) ───────────────────────
     fun getLocalFallbackResponse(query: String): String {
         val q = query.lowercase().trim()
         return when {
-            q.contains("price") || q.contains("cost") || q.contains("rate") || q.contains("quote") || q.contains("quotation") -> {
+            (q.contains("price") || q.contains("cost") || q.contains("rate") || q.contains("quote") || q.contains("quotation") || q.contains("charges")) -> {
                 if (q.contains("play") || q.contains("publish") || q.contains("tester")) {
-                    "Google Play Publishing has 3 transparent packages:\n\n" +
-                            "1. **Publish on Your Account**: ₹10,299 / $129 USD (Includes 12 closed testers for 14 continuous days, console audit, SDK 34+ check).\n" +
-                            "2. **Publish on ChittorTech Account**: ₹25,999 / $299 USD (No console needed; lifetime support & enterprise signing).\n" +
-                            "3. **Full Account Setup & Launch**: ₹29,499 / $339 USD (Complete console registration + D-U-N-S + 12 testers + launch).\n\n" +
-                            "Would you like us to review your APK/AAB? [ACTION:CONTACT]"
+                    "**Google Play Publishing — Official Packages:**\n\n" +
+                    "1. **Publish on Your Account**: Rs 10,299 / \$129 USD\n   (12 testers × 14 days, console audit, SDK 34+ check, privacy policy)\n" +
+                    "2. **Publish on ChittorTech Account**: Rs 25,999 / \$299 USD\n   (No console needed, enterprise keys, lifetime support)\n" +
+                    "3. **Full Account Setup & Launch**: Rs 29,499 / \$339 USD\n   (Console registration + D-U-N-S + testers + live launch)\n\n" +
+                    "Ready to publish? [ACTION:WHATSAPP]"
                 } else {
-                    "Our web development, software, and enterprise AI solutions at ChittorTech are fully customized based on your exact project requirements and scope. Please contact Kush Sharma or Lav Sharma directly via WhatsApp/Phone (+91 7597451057) or email (business@chittortech.in) for a personalized quotation! [ACTION:CONTACT]"
+                    "Our web development, software, and enterprise AI solutions at ChittorTech are **fully customized** based on your exact project scope.\n\n" +
+                    "Contact Kush Sharma or Lav Sharma for a **personalized quotation**:\n📞 +91 7597451057\n📧 business@chittortech.in [ACTION:WHATSAPP]"
                 }
             }
-            q.contains("what is chittortech") || q.contains("about") || q.contains("who are you") || q.contains("founder") -> {
-                "**ChittorTech** is an AI & Software Engineering company based at Collectorate Circle, Chittorgarh, Rajasthan. Founded by **Kush Sharma** (AI Specialist) and **Lav Sharma** (Tech Lead), we have delivered 250+ projects globally with a 99.8% satisfaction rate. We specialize in Enterprise AI & RAG, Mobile Apps, Custom Web SaaS, Google Play 12-Tester Publishing, and ERP/CRM systems! [ACTION:DEMO]"
+            (q.contains("website") || q.contains("web dev") || q.contains("web app") || q.contains("saas") || q.contains("frontend") || q.contains("backend")) -> {
+                "**ChittorTech Web Engineering:**\n\n" +
+                "• **Stack:** Next.js 15, React, TypeScript, Node.js, Python, PostgreSQL, Supabase, Cloudflare\n" +
+                "• **Solutions:** Corporate sites, SaaS platforms, E-commerce portals, Admin dashboards\n" +
+                "• **Delivery:** Agile sprints, live previews, sub-second Core Web Vitals\n\n" +
+                "**Why ChittorTech?**\n" +
+                "• 250+ projects, 99.8% satisfaction rate.\n" +
+                "• 100% commercial IP transfer to you.\n" +
+                "• DPIIT & iStart government-recognized company.\n\n" +
+                "Let's discuss your project! [ACTION:WHATSAPP]"
             }
-            q.contains("contact") || q.contains("phone") || q.contains("number") || q.contains("email") || q.contains("whatsapp") || q.contains("address") -> {
-                "You can connect directly with the ChittorTech leadership team:\n\n" +
-                        "📞 **Phone / WhatsApp**: +91 7597451057\n" +
-                        "✉️ **Email**: business@chittortech.in\n" +
-                        "📍 **Headquarters**: Collectorate Circle, Chittorgarh, Rajasthan – 312001\n" +
-                        "🌐 **Website**: https://chittortech.in [ACTION:CONTACT]"
+            (q.contains("mobile") || q.contains("android") || q.contains("ios") || (q.contains("app") && !q.contains("play"))) -> {
+                "**ChittorTech Mobile App Development:**\n\n" +
+                "• **Native Android:** Kotlin, Jetpack Compose, Material 3\n" +
+                "• **Native iOS:** Swift, SwiftUI, App Store\n" +
+                "• **Cross-Platform:** Flutter, React Native\n" +
+                "• **Google Play Publishing:** 12-tester 14-day guarantee\n\n" +
+                "Build or publish your app today! [ACTION:WHATSAPP]"
             }
-            q.contains("play") || q.contains("12-tester") || q.contains("google play") || q.contains("publish") -> {
-                "We provide 100% guaranteed Google Play Store Production Approval by fulfilling Google's mandatory 12-tester rule (14 continuous days) with real verified human testers, daily telemetry, and review triage. We have launched 50+ apps globally with 100% first-attempt approval! [ACTION:CONTACT]"
+            (q.contains("play") || q.contains("publish") || q.contains("tester") || q.contains("google play")) -> {
+                "**ChittorTech Google Play 12-Tester Division:**\n\n" +
+                "• 50+ apps published globally, 100% first-attempt approval\n" +
+                "• 100% verified real human testers, daily telemetry\n" +
+                "• Free 15-min SDK 34+ & privacy policy audit\n\n" +
+                "**Packages:** Rs10,299 / Rs25,999 / Rs29,499 [ACTION:WHATSAPP]"
             }
-            q.contains("ai") || q.contains("rag") || q.contains("chatbot") || q.contains("agent") || q.contains("groq") -> {
-                "At ChittorTech, we engineer production-grade Enterprise AI solutions:\n\n" +
-                        "• **Sub-500ms AI Chatbots** powered by Groq LPUs & Llama 3.3\n" +
-                        "• **Private RAG Vector Search** (Pinecone, pgvector) with citations\n" +
-                        "• **Autonomous Workflow Agents** for invoicing, OCR & sales leads\n" +
-                        "• **WhatsApp Conversational AI** for automated client support. [ACTION:DEMO]"
+            (q.contains("demo") || q.contains("live demo")) -> {
+                "I'd love to arrange a live demo!\n\n" +
+                "Our team will show you:\n" +
+                "• AI chatbot & RAG system in action\n" +
+                "• Web/mobile portfolio samples\n" +
+                "• ERP/CRM workflows for your industry\n\n" +
+                "Request your free demo now! [ACTION:DEMO]"
             }
-            q.contains("service") || q.contains("what do you do") || q.contains("offer") -> {
-                "ChittorTech offers end-to-end engineering & compliance solutions:\n\n" +
-                        "1. **Enterprise AI & RAG Solutions**\n" +
-                        "2. **Mobile App Development** (Kotlin Android & iOS Swift)\n" +
-                        "3. **Google Play 12-Tester Publishing** (100% Approval Guarantee)\n" +
-                        "4. **Web & SaaS Engineering** (Next.js 15, React, Python FastAPI)\n" +
-                        "5. **Custom ERP & CRM Solutions** (Vyapar billing, inventory)\n" +
-                        "6. **Govt & Startup Compliance** (DPIIT, iStart, DGFT IEC)\n" +
-                        "7. **SEO & Growth Marketing**. [ACTION:CONTACT]"
+            (q.contains("call") || q.contains("phone") || q.contains("dial") || q.contains("schedule") || q.contains("book")) -> {
+                "**Connect directly with Kush & Lav Sharma:**\n\n" +
+                "📞 **Phone / Call:** +91 7597451057\n" +
+                "💬 **WhatsApp:** +91 7597451057\n" +
+                "📧 **Email:** business@chittortech.in\n\n" +
+                "Tap below to call our tech team or chat on WhatsApp! [ACTION:CONTACT] [ACTION:WHATSAPP]"
             }
-            q.contains("hi") || q.contains("hello") || q.contains("hey") || q.contains("namaste") -> {
-                "Hello! 🙏 I'm ChittorTech GPT, your official AI Assistant. How can I assist your business growth or engineering needs today? Feel free to ask about our AI solutions, mobile apps, Google Play publishing, or project estimates!"
+            (q.contains("ai") || q.contains("rag") || q.contains("llm") || q.contains("gpt") || q.contains("chatbot") || q.contains("agent")) -> {
+                "**ChittorTech Enterprise AI & Automation:**\n\n" +
+                "• **AI Chatbots:** Groq LPU powered, sub-second response\n" +
+                "• **Private RAG:** Pinecone/pgvector, cited answers on your data\n" +
+                "• **Autonomous Agents:** Document OCR, invoice parsing, sales outreach\n" +
+                "• **WhatsApp AI:** 24/7 automated lead capture & booking\n\n" +
+                "See it live! [ACTION:DEMO]"
+            }
+            (q.contains("erp") || q.contains("crm") || q.contains("billing") || q.contains("dharamshala") || q.contains("inventory")) -> {
+                "**ChittorTech ERP, CRM & Billing Systems:**\n\n" +
+                "• **CRM:** WhatsApp follow-ups, quotation generator, deal pipeline\n" +
+                "• **Temple/Dharamshala:** Donation receipts, Seva booking, Bhojanshala coupons\n" +
+                "• **GST Billing:** E-invoices, E-way bills, Tally sync, multi-store inventory\n\n" +
+                "[ACTION:WHATSAPP]"
+            }
+            (q.contains("seo") || q.contains("digital marketing") || q.contains("google ads")) -> {
+                "**ChittorTech SEO & Digital Marketing:**\n\n" +
+                "• Technical SEO: Core Web Vitals, Schema, Indexing\n" +
+                "• Local SEO: Google Maps ranking\n" +
+                "• Performance Marketing: Google Ads, Meta Ads, PPC\n" +
+                "• Social: LinkedIn B2B, Instagram, YouTube, Email\n\n" +
+                "[ACTION:WHATSAPP]"
+            }
+            (q.contains("email") || q.contains("dmarc") || q.contains("dkim") || q.contains("spf") || q.contains("blacklist") || q.contains("deliverability")) -> {
+                "**ChittorTech Email Deliverability & Infrastructure:**\n\n" +
+                "• DMARC/DKIM/SPF setup, 2048-bit DKIM, SPF flattening\n" +
+                "• Blacklist removal: Spamhaus, Barracuda, SpamCop\n" +
+                "• BIMI verified brand logo in Gmail & Yahoo\n" +
+                "• Cloudflare WAF, DDoS mitigation, DNS management\n\n" +
+                "[ACTION:WHATSAPP]"
+            }
+            (q.contains("trust") || q.contains("dpiit") || q.contains("istart") || q.contains("msme") || q.contains("iec") || q.contains("udyam")) -> {
+                "**ChittorTech Government Accreditations:**\n\n" +
+                "• **DPIIT Startup India** — 80% patent fee rebates, tax holidays\n" +
+                "• **iStart Rajasthan** — Q-Rate Score: 32, Profile #11478\n" +
+                "• **DGFT IEC:** OTWPS1188A — USD/EUR/GBP exports\n" +
+                "• **MSME/Udyam** — 45-day payment protection\n\n" +
+                "We deliver these registrations for clients too! [ACTION:WHATSAPP]"
+            }
+            (q.contains("portfolio") || q.contains("work") || q.contains("sample")) -> {
+                "**ChittorTech Portfolio:**\n\n" +
+                "• **Mewari Achaar** — E-commerce (mewari-achar.shop)\n" +
+                "• **kunh** — Global client app (tech.kunh.app), Turkey, Production Live\n" +
+                "• **Visit Chittorgarh** — Tourism app, Live on Play Store\n" +
+                "• **Shaadi Sutra** — Wedding SaaS (shaadi-sutra.vercel.app)\n\n" +
+                "See live demos! [ACTION:DEMO]"
+            }
+            (q.contains("contact") || q.contains("phone") || q.contains("whatsapp") || q.contains("address") || q.contains("reach")) -> {
+                "**Connect with ChittorTech:**\n\n" +
+                "📞 Phone / WhatsApp: +91 7597451057\n" +
+                "📧 Business: business@chittortech.in\n" +
+                "📧 General: contact@chittortech.in\n" +
+                "📍 Collectorate Circle, Chittorgarh, Rajasthan 312001\n" +
+                "🌐 https://chittortech.in [ACTION:WHATSAPP]"
+            }
+            (q.contains("about") || q.contains("who") || q.contains("founder") || q.contains("chittortech")) -> {
+                "**ChittorTech** — AI & Software Engineering, Chittorgarh, Rajasthan.\n\n" +
+                "• Founded by **Kush Sharma** (AI Specialist) & **Lav Sharma** (Tech Lead)\n" +
+                "• 250+ projects, 99.8% satisfaction, 4.8+ rating\n" +
+                "• DPIIT Startup India + iStart Rajasthan + DGFT + MSME recognized\n\n" +
+                "[ACTION:WHATSAPP]"
+            }
+            (q.contains("hi") || q.contains("hello") || q.contains("hey") || q.contains("namaste")) -> {
+                "Namaste! 🙏 I'm **ChittorTech GPT**, your official AI Assistant.\n\n" +
+                "Ask me about:\n" +
+                "• Website & SaaS Development\n" +
+                "• Android & iOS Mobile Apps\n" +
+                "• Google Play 12-Tester Publishing\n" +
+                "• Enterprise AI & RAG Systems\n" +
+                "• ERP, CRM & GST Billing\n" +
+                "• SEO & Digital Marketing\n\n" +
+                "How can I help? [ACTION:WHATSAPP]"
             }
             else -> {
-                "Thank you for reaching out! ChittorTech provides tailored solutions for Enterprise AI, Mobile & Web Development, and Google Play Store 12-Tester Publishing. Would you like to discuss your project requirements with our engineering team? [ACTION:CONTACT]"
+                "ChittorTech delivers Enterprise AI, Web & SaaS, Mobile Apps, Google Play Publishing, ERP/CRM, and Business Automation.\n\nWould you like a free technical consultation? [ACTION:WHATSAPP]"
             }
         }
     }

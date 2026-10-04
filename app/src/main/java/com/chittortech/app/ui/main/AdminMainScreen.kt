@@ -48,6 +48,7 @@ fun AdminMainScreen(
     val invoices by repository.observeAllInvoices().collectAsStateWithLifecycle(emptyList())
     val tickets by repository.observeAllTickets().collectAsStateWithLifecycle(emptyList())
     val clients by repository.observeAllClients().collectAsStateWithLifecycle(emptyList())
+    val notifications by repository.observeNotifications().collectAsStateWithLifecycle(emptyList())
 
     Scaffold(
         topBar = {
@@ -118,9 +119,16 @@ fun AdminMainScreen(
         ) { tab ->
             when (tab) {
                 AdminTab.DASHBOARD -> AdminDashboardScreen(
-                    kpi      = kpi,
+                    kpi = kpi,
                     projects = projects,
-                    invoices = invoices
+                    invoices = invoices,
+                    notifications = notifications,
+                    onSendNotification = { title, message ->
+                        scope.launch { repository.sendNotification(title, message) }
+                    },
+                    onDeleteNotification = { id ->
+                        scope.launch { repository.deleteNotification(id) }
+                    }
                 )
 
                 AdminTab.INVOICES -> InvoiceBuilderScreen(

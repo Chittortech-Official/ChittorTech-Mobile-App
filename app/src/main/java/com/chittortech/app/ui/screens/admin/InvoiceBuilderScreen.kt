@@ -90,7 +90,8 @@ fun InvoiceBuilderScreen(
 
 @Composable
 private fun AdminInvoiceCard(invoice: Invoice, clients: List<CtUser>) {
-    val clientName = clients.find { it.uid == invoice.clientId }?.companyName ?: invoice.clientId
+    val clientName = clients.find { it.uid == invoice.clientId || it.email.equals(invoice.clientId, ignoreCase = true) }
+        ?.let { it.companyName.ifBlank { it.displayName.ifBlank { it.email } } } ?: invoice.clientId
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -181,7 +182,7 @@ private fun CreateInvoiceDialog(
                     onExpandedChange = { clientExpanded = it }
                 ) {
                     OutlinedTextField(
-                        value = selectedClient?.companyName ?: "Select Client",
+                        value = selectedClient?.let { it.companyName.ifBlank { it.displayName.ifBlank { it.email } } } ?: "Select Client",
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Client") },
@@ -195,7 +196,7 @@ private fun CreateInvoiceDialog(
                     ) {
                         clients.forEach { c ->
                             DropdownMenuItem(
-                                text = { Text(c.companyName) },
+                                text = { Text(c.companyName.ifBlank { c.displayName.ifBlank { c.email } }) },
                                 onClick = { selectedClient = c; clientExpanded = false }
                             )
                         }
@@ -295,10 +296,11 @@ private fun CreateInvoiceDialog(
                         if (d.isBlank()) null else InvoiceLineItem(d, a.toLongOrNull() ?: 0L)
                     }
                     val total = items.sumOf { it.amount }
-                    val project = projects.find { it.clientId == client.uid }
+                    val project = projects.find { it.clientId == client.uid || it.clientId.equals(client.email, ignoreCase = true) }
+                    val clientDocKey = client.email.trim().lowercase().ifBlank { client.uid }
                     onConfirm(
                         Invoice(
-                            clientId  = client.uid,
+                            clientId  = clientDocKey,
                             projectId = project?.projectId ?: "",
                             title     = title,
                             lineItems = items,

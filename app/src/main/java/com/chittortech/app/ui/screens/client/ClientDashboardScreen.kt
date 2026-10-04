@@ -124,11 +124,11 @@ fun ClientDashboardScreen(
 
         // ── Active Project Card ───────────────────────────────────────────────
         item {
-            if (project != null) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    SectionHeader(title = "🚀 Active Project")
-                    Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(4.dp))
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                SectionHeader(title = "🚀 Active Project")
+                Spacer(modifier = Modifier.height(10.dp))
+                if (project != null) {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
@@ -190,6 +190,60 @@ fun ClientDashboardScreen(
                             Text("${project.milestoneProgress}% Complete", fontSize = 11.sp, color = TextMuted)
                         }
                     }
+                } else {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = CtCardWhite),
+                        elevation = CardDefaults.cardElevation(2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(CtPrimaryLight),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.RocketLaunch,
+                                    contentDescription = null,
+                                    tint = CtPrimaryBlue,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                "No Active Project Linked Yet",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "Once your ChittorTech workspace is linked to your account, live progress, domain, and server stats will appear here.",
+                                fontSize = 12.sp,
+                                color = TextSecondary,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            OutlinedButton(
+                                onClick = onContactEngineer,
+                                shape = RoundedCornerShape(10.dp),
+                                border = BorderStroke(1.dp, CtPrimaryBlue),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = CtPrimaryBlue)
+                            ) {
+                                Icon(Icons.Default.Chat, contentDescription = null, modifier = Modifier.size(15.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Contact Lead to Link Project", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -220,7 +274,7 @@ fun ClientDashboardScreen(
                     )
                     QuickActionCard(
                         icon = Icons.Default.Chat,
-                        label = "Contact Lead",
+                        label = "Contact Support",
                         color = CtGreen,
                         onClick = onContactEngineer,
                         modifier = Modifier.weight(1f)
@@ -229,8 +283,8 @@ fun ClientDashboardScreen(
             }
         }
 
-        // ── Renewal Info ──────────────────────────────────────────────────────
-        if (project != null && project.domainExpiryDate.isNotBlank()) {
+        // ── Infrastructure & Renewal Info ────────────────────────────────────
+        if (project != null && (project.domain.isNotBlank() || project.domainExpiryDate.isNotBlank())) {
             item {
                 Spacer(modifier = Modifier.height(20.dp))
                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
@@ -246,7 +300,7 @@ fun ClientDashboardScreen(
             item {
                 Spacer(modifier = Modifier.height(20.dp))
                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    SectionHeader(title = "🎫 Recent Tickets", actionLabel = "View All", onAction = {})
+                    SectionHeader(title = "🎫 Recent Tickets", actionLabel = "View All", onAction = onRaiseTicket)
                     Spacer(modifier = Modifier.height(10.dp))
                 }
             }
@@ -271,20 +325,23 @@ fun QuickActionCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.clickable(onClick = onClick),
+        modifier = modifier
+            .height(104.dp)
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = CtCardWhite),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(
             modifier = Modifier
-                .padding(12.dp)
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Box(
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(42.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(color.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
@@ -294,16 +351,18 @@ fun QuickActionCard(
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 label,
-                fontSize = 11.sp,
+                fontSize = 11.5.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = TextPrimary,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                maxLines = 2,
+                lineHeight = 14.sp
             )
         }
     }
 }
 
-// ─── Infra Status Card ────────────────────────────────────────────────────────
+// ─── Infra Status Card (Client-Facing: Domain, SSL, Dates & Maintenance) ──────
 
 @Composable
 fun InfraStatusCard(project: Project, modifier: Modifier = Modifier) {
@@ -314,25 +373,146 @@ fun InfraStatusCard(project: Project, modifier: Modifier = Modifier) {
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            InfraRow(label = "Domain", value = project.domain, icon = Icons.Default.Language)
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = CtBorder)
-            InfraRow(label = "Hosting", value = project.hostingProvider, icon = Icons.Default.Cloud)
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = CtBorder)
-            InfraRow(
-                label = "SSL Certificate",
-                value = project.sslStatus,
-                icon = Icons.Default.Lock,
-                valueColor = if (project.sslStatus == "Active") CtGreen else CtRed
-            )
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = CtBorder)
-            InfraRow(label = "Domain Expiry", value = project.domainExpiryDate, icon = Icons.Default.CalendarToday)
-            if (project.annualRenewalFee > 0) {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = CtBorder)
-                InfraRow(
-                    label = "Annual Renewal",
-                    value = "₹${project.annualRenewalFee.toFormatted()}",
-                    icon = Icons.Default.CurrencyRupee
-                )
+            // Domain & SSL Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f, fill = false)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(CtPrimaryLight),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Language, contentDescription = null, tint = CtPrimaryBlue, modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text("Production Domain", fontSize = 11.sp, color = TextSecondary)
+                        Text(
+                            project.domain.ifBlank { "—" },
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                    }
+                }
+
+                // SSL Badge
+                val isSslActive = project.sslStatus.contains("Active", ignoreCase = true)
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (isSslActive) CtGreenLight else CtRedLight,
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = if (isSslActive) CtGreen else CtRed,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (isSslActive) "SSL Active" else "SSL Issue",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isSslActive) CtGreen else CtRed
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = CtBorder)
+
+            // Start Date, Expiry Date & Annual Maintenance Grid
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Project Kickoff Date
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Kickoff Date", fontSize = 11.sp, color = TextSecondary)
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.PlayCircle, contentDescription = null, tint = CtGreen, modifier = Modifier.size(13.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            project.buildKickoffDate.ifBlank { "—" },
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary
+                        )
+                    }
+                }
+
+                // Domain Expiry Date
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Domain Expiry", fontSize = 11.sp, color = TextSecondary)
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.CalendarToday, contentDescription = null, tint = TextMuted, modifier = Modifier.size(13.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            project.domainExpiryDate.ifBlank { "—" },
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary
+                        )
+                    }
+                }
+
+                // Annual Maintenance (AMC)
+                if (project.annualRenewalFee > 0) {
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text("Annual Maintenance", fontSize = 11.sp, color = TextSecondary)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            "₹${project.annualRenewalFee.toFormatted()}/yr",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = CtPrimaryBlue
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // ChittorTech Admin Note for Deeper Server Configs
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = Color(0xFFF8FAFC),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = null,
+                        tint = CtPrimaryBlue,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "For custom cloud scaling, dedicated IPs, or server changes, please contact ChittorTech Admin.",
+                        fontSize = 11.sp,
+                        color = TextSecondary,
+                        lineHeight = 15.sp
+                    )
+                }
             }
         }
     }

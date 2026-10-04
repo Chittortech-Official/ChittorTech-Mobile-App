@@ -73,13 +73,13 @@ fun MainNavigation(
                                 result.onFailure { e ->
                                     loginError = e.message ?: "Sign-in failed. Please verify credentials."
                                 }
-                                result.onSuccess {
-                                    val user = repository.getCurrentUser()
+                                result.onSuccess { assignedRole ->
+                                    val user = repository.getCurrentUser() ?: repository.getUserByEmail(email)
                                     currentUser = user ?: CtUser(
-                                        uid = "auth_user",
+                                        uid = email.trim().lowercase(),
                                         email = email,
                                         displayName = email.substringBefore("@"),
-                                        role = role
+                                        role = assignedRole
                                     )
                                 }
                             }

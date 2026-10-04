@@ -38,7 +38,7 @@ fun HelpdeskScreen(
                 .fillMaxSize()
                 .background(CtBackground)
         ) {
-            // Header
+            // Header with Raise Ticket action
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -46,9 +46,30 @@ fun HelpdeskScreen(
                     .statusBarsPadding()
                     .padding(horizontal = 20.dp, vertical = 18.dp)
             ) {
-                Column {
-                    Text("Helpdesk", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    Text("Track & manage your support requests", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Helpdesk", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text("Track & manage your support requests", fontSize = 12.sp, color = Color.White.copy(alpha = 0.85f))
+                    }
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Button(
+                        onClick = { showRaiseDialog = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, tint = CtPrimaryBlue, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Raise Ticket", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CtPrimaryBlue)
+                    }
                 }
             }
 
@@ -71,7 +92,7 @@ fun HelpdeskScreen(
             if (tickets.isEmpty()) {
                 EmptyState(
                     icon = Icons.Default.SupportAgent,
-                    message = "No tickets yet. Raise one below!"
+                    message = "No tickets yet. Click 'Raise Ticket' above to report an issue!"
                 )
             } else {
                 LazyColumn(
@@ -81,23 +102,10 @@ fun HelpdeskScreen(
                     items(tickets) { ticket ->
                         TicketDetailCard(ticket = ticket)
                     }
-                    item { Spacer(modifier = Modifier.height(80.dp)) }
+                    item { Spacer(modifier = Modifier.height(24.dp)) }
                 }
             }
         }
-
-        // FAB
-        ExtendedFloatingActionButton(
-            onClick = { showRaiseDialog = true },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(24.dp)
-                .navigationBarsPadding(),
-            containerColor = CtPrimaryBlue,
-            contentColor = Color.White,
-            icon = { Icon(Icons.Default.Add, contentDescription = null) },
-            text = { Text("Raise Ticket", fontWeight = FontWeight.SemiBold) }
-        )
     }
 
     // Raise Ticket Dialog
@@ -224,6 +232,8 @@ fun RaiseTicketDialog(
     var description by remember { mutableStateOf("") }
     var categoryExpanded by remember { mutableStateOf(false) }
     var priorityExpanded by remember { mutableStateOf(false) }
+    var validationError by remember { mutableStateOf<String?>(null) }
+    var isSubmitting by remember { mutableStateOf(false) }
 
     val categories = listOf("Bug", "New Feature Request", "Server Downtime", "Email Deliverability", "SEO / GMB", "Other")
     val priorities = listOf("LOW", "MEDIUM", "HIGH", "URGENT")
@@ -243,9 +253,12 @@ fun RaiseTicketDialog(
                 // Title
                 OutlinedTextField(
                     value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Issue Title") },
-                    placeholder = { Text("Brief summary of your issue") },
+                    onValueChange = {
+                        title = it
+                        if (validationError != null) validationError = null
+                    },
+                    label = { Text("Issue Title / Summary") },
+                    placeholder = { Text("e.g. Need feature update or bug fix") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp)
@@ -314,7 +327,10 @@ fun RaiseTicketDialog(
                 // Description
                 OutlinedTextField(
                     value = description,
-                    onValueChange = { description = it },
+                    onValueChange = {
+                        description = it
+                        if (validationError != null) validationError = null
+                    },
                     label = { Text("Detailed Description") },
                     placeholder = { Text("Describe the issue in detail...") },
                     minLines = 3,
@@ -322,21 +338,56 @@ fun RaiseTicketDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp)
                 )
+
+                if (validationError != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = validationError ?: "",
+                        color = CtRed,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    if (title.isNotBlank() && description.isNotBlank()) {
-                        onSubmit(NewTicketForm(title, category, priority, description))
+                    val cleanTitle = title.trim()
+                    val cleanDesc = description.trim()
+                    if (cleanTitle.isBlank() && cleanDesc.isBlank()) {
+                        validationError = "Please enter an issue title or description."
+                        return@Button
                     }
+                    val finalTitle = cleanTitle.ifBlank {
+                        if (cleanDesc.length > 50) cleanDesc.take(47) + "..." else cleanDesc
+                    }
+                    val finalDesc = cleanDesc.ifBlank { finalTitle }
+                    isSubmitting = true
+                    onSubmit(NewTicketForm(finalTitle, category, priority, finalDesc))
                 },
+                enabled = !isSubmitting,
                 colors = ButtonDefaults.buttonColors(containerColor = CtPrimaryBlue),
                 shape = RoundedCornerShape(10.dp)
-            ) { Text("Submit Ticket") }
+            ) {
+                if (isSubmitting) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Submitting...")
+                } else {
+                    Text("Submit Ticket")
+                }
+            }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isSubmitting
+            ) { Text("Cancel") }
         }
     )
 }

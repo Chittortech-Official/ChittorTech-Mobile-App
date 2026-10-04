@@ -142,3 +142,15 @@ data class LeadInquiry(
     val createdAt: Timestamp? = null
 )
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Broadcast App Notification Model
+// ─────────────────────────────────────────────────────────────────────────────
+
+data class AppNotification(
+    val id: String = "",
+    val title: String = "",
+    val message: String = "",
+    val type: String = "INFO", // "INFO" | "UPDATE" | "ALERT"
+    val timestamp: Timestamp? = null
+)
+

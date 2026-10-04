@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -32,6 +31,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -45,7 +45,8 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun ChittorTechChatbotScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    currentScreen: String = "ChittorTech Mobile App"
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -59,7 +60,7 @@ fun ChittorTechChatbotScreen(
             listOf(
                 ChatMessage(
                     sender = MessageSender.BOT,
-                    text = "Hello! I'm ChittorTech GPT, your official AI Assistant. How can I assist your business growth or engineering today? Feel free to ask about our AI solutions, mobile apps, Google Play publishing, or custom software."
+                    text = "Hello! I'm ChittorTech GPT, your AI Assistant. How can I assist your business growth or engineering today? Feel free to ask about our website development, mobile apps, Google Play publishing, enterprise AI, or custom software."
                 )
             )
         )
@@ -69,10 +70,13 @@ fun ChittorTechChatbotScreen(
     var isTyping by remember { mutableStateOf(false) }
 
     val quickSuggestions = listOf(
-        "What is ChittorTech?",
+        "Website & SaaS Development",
+        "Mobile Apps (Android & iOS)",
         "Google Play 12-Tester Publishing",
         "Enterprise AI & RAG",
+        "B2B Lead Generation Engine",
         "Custom ERP & CRM Pricing",
+        "What is ChittorTech?",
         "Contact Kush & Lav Sharma"
     )
 
@@ -88,7 +92,14 @@ fun ChittorTechChatbotScreen(
         scope.launch {
             listState.animateScrollToItem(messages.size)
 
-            val botResponseText = groqService.sendMessage(trimmed, messages)
+            val userName = context.getSharedPreferences("chittortech_user_prefs", Context.MODE_PRIVATE)
+                .getString("user_name", "Guest").orEmpty().ifBlank { "Guest" }
+            val botResponseText = groqService.sendMessage(
+                userMessage = trimmed,
+                history = messages,
+                currentScreen = currentScreen,
+                userName = userName
+            )
             val botMsg = ChatMessage(sender = MessageSender.BOT, text = botResponseText)
             messages = messages + botMsg
             isTyping = false
@@ -106,11 +117,66 @@ fun ChittorTechChatbotScreen(
         }
     }
 
+    // WhatsApp Direct Sync — attaches latest user query so founders have immediate context
+    fun openWhatsApp(specificQuery: String = "") {
+        val lastUserMsg = messages.filter { it.sender == MessageSender.USER }.lastOrNull()?.text?.trim().orEmpty()
+        val queryToInclude = if (specificQuery.isNotBlank()) specificQuery else lastUserMsg
+
+        val userName = context.getSharedPreferences("chittortech_user_prefs", Context.MODE_PRIVATE)
+            .getString("user_name", "").orEmpty().trim()
+        val userGreeting = if (userName.isNotBlank()) "I am $userName, chatting" else "I am chatting"
+
+        val messageToSend = if (queryToInclude.isNotBlank()) {
+            "Namaste Lav Sir! $userGreeting with ChittorTech GPT on the mobile app.\n\nQuery: \"$queryToInclude\"\n\nCan we discuss this further?"
+        } else {
+            "Namaste Lav Sir! $userGreeting with ChittorTech GPT on the mobile app. I would like to explore ChittorTech services."
+        }
+
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            data = Uri.parse("https://wa.me/917597451057?text=${Uri.encode(messageToSend)}")
+        }
+        context.startActivity(intent)
+    }
+
+    fun callTeam() {
+        val intent = Intent(Intent.ACTION_DIAL).apply {
+            data = Uri.parse("tel:+917597451057")
+        }
+        context.startActivity(intent)
+    }
+
+    fun openEstimator() {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            data = Uri.parse("https://chittortech.in/project-estimator")
+        }
+        context.startActivity(intent)
+    }
+
+    fun openDemoRequest() {
+        val lastUserMsg = messages.filter { it.sender == MessageSender.USER }.lastOrNull()?.text?.trim().orEmpty()
+        val queryPart = if (lastUserMsg.isNotBlank()) "\n\nRegarding: \"$lastUserMsg\"" else ""
+        val messageToSend = "Namaste Lav Sir! I would like to request a live demo of ChittorTech solutions.$queryPart\n\nPlease let me know the available time slots."
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            data = Uri.parse("https://wa.me/917597451057?text=${Uri.encode(messageToSend)}")
+        }
+        context.startActivity(intent)
+    }
+
+    fun openScheduleCall() {
+        val lastUserMsg = messages.filter { it.sender == MessageSender.USER }.lastOrNull()?.text?.trim().orEmpty()
+        val queryPart = if (lastUserMsg.isNotBlank()) "\n\nRegarding: \"$lastUserMsg\"" else ""
+        val messageToSend = "Namaste Lav Sir! I would like to schedule a consultation call with the ChittorTech team.$queryPart\n\nPlease share available slots."
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            data = Uri.parse("https://wa.me/917597451057?text=${Uri.encode(messageToSend)}")
+        }
+        context.startActivity(intent)
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFFF8FAFC))
-            .imePadding() // Critical: Automatically moves input bar above virtual keyboard
+            .imePadding()
     ) {
         // ── 1. Top ChittorTech GPT Header ─────────────────────────────────────
         Surface(
@@ -156,30 +222,14 @@ fun ChittorTechChatbotScreen(
                     Spacer(modifier = Modifier.width(12.dp))
 
                     Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "ChittorTech GPT",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0F172A)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = Color(0xFFEFF6FF),
-                                modifier = Modifier.padding(horizontal = 2.dp)
-                            ) {
-                                Text(
-                                    text = "OFFICIAL AI",
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = Color(0xFF0284C7),
-                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
                         Text(
-                            text = "Online · ChittorTech Intelligence",
+                            text = "ChittorTech GPT",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0F172A)
+                        )
+                        Text(
+                            text = "Online · Groq LPU Powered",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color(0xFF10B981)
@@ -187,17 +237,17 @@ fun ChittorTechChatbotScreen(
                     }
                 }
 
-                // Reset Chat Icon
+                // Reset Chat Icon ONLY (no ugly WhatsApp icon in header)
                 IconButton(
                     onClick = {
                         messages = listOf(
                             ChatMessage(
                                 sender = MessageSender.BOT,
-                                text = "Hello! I'm ChittorTech GPT, your official AI Assistant. How can I assist your business growth or engineering today? Feel free to ask about our AI solutions, mobile apps, Google Play publishing, or custom software."
+                                text = "Hello! I'm ChittorTech GPT, your AI Assistant. How can I assist your business growth or engineering today? Feel free to ask about our website development, mobile apps, Google Play publishing, enterprise AI, or custom software."
                             )
                         )
                     },
-                    modifier = Modifier.size(34.dp)
+                    modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.RestartAlt,
@@ -222,7 +272,7 @@ fun ChittorTechChatbotScreen(
             item {
                 Column(modifier = Modifier.padding(bottom = 6.dp)) {
                     Text(
-                        text = "Suggested Inquiries",
+                        text = "Suggested Topics",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF64748B),
@@ -254,29 +304,32 @@ fun ChittorTechChatbotScreen(
                 }
             }
 
-            // Messages
-            items(messages, key = { it.id }) { msg ->
-                if (msg.sender == MessageSender.USER) {
-                    UserMessageBubble(text = msg.text)
+            // Chat Messages List
+            items(messages) { message ->
+                if (message.sender == MessageSender.USER) {
+                    UserMessageBubble(text = message.text)
                 } else {
+                    val msgIndex = messages.indexOf(message)
+                    val precedingUserMsg = messages
+                        .take(msgIndex)
+                        .filter { it.sender == MessageSender.USER }
+                        .lastOrNull()?.text ?: ""
+
                     BotMessageBubble(
-                        text = msg.text,
+                        text = message.text,
                         onCopy = {
-                            clipboardManager.setText(AnnotatedString(msg.text.replace("[ACTION:CONTACT]", "").replace("[ACTION:DEMO]", "").trim()))
+                            clipboardManager.setText(AnnotatedString(message.text))
                         },
-                        onContactClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/917597451057?text=Hello%20ChittorTech%2C%20I%20have%20an%20inquiry%20regarding%20your%20services."))
-                            context.startActivity(intent)
-                        },
-                        onCallClick = {
-                            val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:+917597451057"))
-                            context.startActivity(intent)
-                        }
+                        onWhatsAppClick = { openWhatsApp(precedingUserMsg) },
+                        onCallClick = { callTeam() },
+                        onEstimatorClick = { openEstimator() },
+                        onDemoClick = { openDemoRequest() },
+                        onScheduleClick = { openScheduleCall() }
                     )
                 }
             }
 
-            // Typing Indicator
+            // Typing indicator
             if (isTyping) {
                 item {
                     BotTypingBubble()
@@ -284,7 +337,7 @@ fun ChittorTechChatbotScreen(
             }
         }
 
-        // ── 3. Bottom Input Bar ───────────────────────────────────────────────
+        // ── 3. Bottom Input Row ───────────────────────────────────────────────
         Surface(
             color = Color.White,
             shadowElevation = 8.dp,
@@ -294,8 +347,9 @@ fun ChittorTechChatbotScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
+                // Input TextField
                 OutlinedTextField(
                     value = inputText,
                     onValueChange = { inputText = it },
@@ -351,6 +405,205 @@ fun ChittorTechChatbotScreen(
     }
 }
 
+// ── Message Block Sealed Structure for Markdown & Tables ──────────────────────
+private sealed interface MessageBlock {
+    data class Text(val text: String) : MessageBlock
+    data class Table(val headers: List<String>, val rows: List<List<String>>) : MessageBlock
+}
+
+private fun splitTableRow(row: String): List<String> {
+    val trimmed = row.trim()
+    val clean = if (trimmed.startsWith("|")) trimmed.substring(1) else trimmed
+    val cleanEnd = if (clean.endsWith("|")) clean.substring(0, clean.length - 1) else clean
+    return cleanEnd.split("|").map { it.trim() }
+}
+
+private fun isTableSeparator(line: String): Boolean {
+    val trimmed = line.trim()
+    if (!trimmed.contains("-") || !trimmed.contains("|")) return false
+    val cells = splitTableRow(trimmed)
+    return cells.isNotEmpty() && cells.all { cell ->
+        val c = cell.trim()
+        c.isNotEmpty() && c.all { it == '-' || it == ':' || it == ' ' }
+    }
+}
+
+private fun parseMessageBlocks(rawText: String): List<MessageBlock> {
+    val blocks = mutableListOf<MessageBlock>()
+    val lines = rawText.lines()
+    var i = 0
+    val currentTextLines = mutableListOf<String>()
+
+    fun flushText() {
+        if (currentTextLines.isNotEmpty()) {
+            val combined = currentTextLines.joinToString("\n").trim()
+            if (combined.isNotBlank()) {
+                blocks.add(MessageBlock.Text(combined))
+            }
+            currentTextLines.clear()
+        }
+    }
+
+    while (i < lines.size) {
+        val line = lines[i].trim()
+        if (line.contains("|") && i + 1 < lines.size && isTableSeparator(lines[i + 1])) {
+            flushText()
+            val headers = splitTableRow(line)
+            val rows = mutableListOf<List<String>>()
+            i += 2 // skip header and separator
+            while (i < lines.size) {
+                val rowLine = lines[i].trim()
+                if (rowLine.contains("|") && !isTableSeparator(rowLine)) {
+                    val cells = splitTableRow(rowLine)
+                    rows.add(cells)
+                    i++
+                } else {
+                    break
+                }
+            }
+            if (headers.isNotEmpty() && rows.isNotEmpty()) {
+                blocks.add(MessageBlock.Table(headers, rows))
+            }
+            continue
+        }
+        currentTextLines.add(lines[i])
+        i++
+    }
+    flushText()
+    return blocks
+}
+
+/**
+ * Parses markdown bold (**text**), headers (###), and bullet points (- / *),
+ * stripping all raw asterisks so the text renders cleanly without any "**".
+ */
+private fun parseMarkdownToAnnotatedString(text: String): AnnotatedString {
+    val cleanedText = text
+        .lines()
+        .joinToString("\n") { line ->
+            val trimmed = line.trimStart()
+            when {
+                trimmed.startsWith("### ") -> "**${trimmed.substring(4)}**"
+                trimmed.startsWith("## ") -> "**${trimmed.substring(3)}**"
+                trimmed.startsWith("# ") -> "**${trimmed.substring(2)}**"
+                (trimmed.startsWith("* ") && !trimmed.startsWith("**")) || trimmed.startsWith("- ") -> {
+                    val indent = line.substring(0, line.indexOf(trimmed))
+                    "$indent• ${trimmed.substring(2)}"
+                }
+                else -> line
+            }
+        }
+
+    val builder = AnnotatedString.Builder()
+    val boldRegex = Regex("""\*\*(.*?)\*\*""")
+    var currentIndex = 0
+    val matches = boldRegex.findAll(cleanedText)
+
+    for (match in matches) {
+        val start = match.range.first
+        val end = match.range.last + 1
+        val boldContent = match.groupValues[1]
+
+        if (start > currentIndex) {
+            builder.append(cleanedText.substring(currentIndex, start))
+        }
+
+        val boldStart = builder.length
+        builder.append(boldContent)
+        val boldEnd = builder.length
+        builder.addStyle(
+            SpanStyle(fontWeight = FontWeight.Bold, color = Color(0xFF0F172A)),
+            boldStart,
+            boldEnd
+        )
+
+        currentIndex = end
+    }
+
+    if (currentIndex < cleanedText.length) {
+        builder.append(cleanedText.substring(currentIndex))
+    }
+
+    return builder.toAnnotatedString()
+}
+
+// ── Responsive Centered Blue Table (Exact 1:1 Website Design) ─────────────────
+@Composable
+private fun CenteredMarkdownTable(table: MessageBlock.Table) {
+    if (table.headers.isEmpty()) return
+
+    val numCols = table.headers.size
+
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, Color(0xFFDBEAFE)),
+        shadowElevation = 0.5.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Header Row with soft blue gradient matching website
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(Color(0xFFF0F9FF), Color(0xFFE0F2FE))
+                        )
+                    )
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                table.headers.forEach { header ->
+                    val cleanHeader = header.replace("**", "").trim().uppercase()
+                    Text(
+                        text = cleanHeader,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1E40AF),
+                        lineHeight = 15.sp,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 4.dp)
+                    )
+                }
+            }
+
+            HorizontalDivider(color = Color(0xFFDBEAFE), thickness = 1.dp)
+
+            // Table Rows with alternating background
+            table.rows.forEachIndexed { rowIndex, row ->
+                val rowBg = if (rowIndex % 2 == 0) Color.White else Color(0xFFF8FAFC)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(rowBg)
+                        .padding(horizontal = 10.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    for (colIndex in 0 until numCols) {
+                        val cellText = row.getOrElse(colIndex) { "" }
+                        Text(
+                            text = parseMarkdownToAnnotatedString(cellText),
+                            fontSize = 11.5.sp,
+                            color = Color(0xFF334155),
+                            lineHeight = 16.sp,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 4.dp)
+                        )
+                    }
+                }
+                if (rowIndex < table.rows.lastIndex) {
+                    HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 0.8.dp)
+                }
+            }
+        }
+    }
+}
+
 // ── User Message Bubble ───────────────────────────────────────────────────────
 @Composable
 private fun UserMessageBubble(text: String) {
@@ -379,15 +632,36 @@ private fun UserMessageBubble(text: String) {
 private fun BotMessageBubble(
     text: String,
     onCopy: () -> Unit,
-    onContactClick: () -> Unit,
-    onCallClick: () -> Unit
+    onWhatsAppClick: () -> Unit,
+    onCallClick: () -> Unit,
+    onEstimatorClick: () -> Unit,
+    onDemoClick: () -> Unit,
+    onScheduleClick: () -> Unit
 ) {
+    // 1. Universal Action Tag Detection (matches [ACTION:WHATSAPP], [**ACTION:WHATSAPP**], [Action: WhatsApp], etc.)
+    val rawUpper = text.uppercase()
+    val showWhatsApp  = rawUpper.contains("WHATSAPP") || rawUpper.contains("7597451057") || rawUpper.contains("ACTION:CONTACT")
+    val showCall      = rawUpper.contains("ACTION:CONTACT") || rawUpper.contains("CALL US") || rawUpper.contains("CALL ME") || rawUpper.contains("PHONE")
+    val showEstimator = rawUpper.contains("ACTION:ESTIMATOR") || rawUpper.contains("ESTIMATOR")
+    val showDemo      = rawUpper.contains("ACTION:DEMO") || rawUpper.contains("LIVE DEMO")
+    val showSchedule  = rawUpper.contains("ACTION:SCHEDULE") || rawUpper.contains("SCHEDULE")
+    val hasAnyAction  = showWhatsApp || showCall || showEstimator || showDemo || showSchedule
+
+    // 2. Strip all action tags and clean dangling connector words ("or", "and", "/", ":") from end of lines
+    val actionRegex = Regex("""(?i)\[\s*\*?\*?\s*action\s*:\s*[^\]]+\]""")
     val cleanText = text
-        .replace("[ACTION:CONTACT]", "")
-        .replace("[ACTION:DEMO]", "")
+        .replace(actionRegex, "")
+        .lines()
+        .map { line ->
+            line.replace(Regex("""(?i)\s+(or|and|\/|,|:)\s*$"""), "").trimEnd()
+        }
+        .filterIndexed { index, line ->
+            line.isNotBlank() || index > 0
+        }
+        .joinToString("\n")
         .trim()
 
-    val showContactActions = text.contains("[ACTION:CONTACT]") || text.contains("[ACTION:DEMO]")
+    val blocks = remember(cleanText) { parseMessageBlocks(cleanText) }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -411,20 +685,39 @@ private fun BotMessageBubble(
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        Column(modifier = Modifier.widthIn(max = 300.dp)) {
+        // Bubble column fills remaining width naturally so tables are never squished
+        Column(
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .widthIn(max = 350.dp)
+        ) {
             Surface(
                 shape = RoundedCornerShape(topStart = 4.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 16.dp),
                 color = Color.White,
                 border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                shadowElevation = 1.dp
+                shadowElevation = 1.dp,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
-                    Text(
-                        text = cleanText,
-                        color = Color(0xFF1E293B),
-                        fontSize = 13.5.sp,
-                        lineHeight = 20.sp
-                    )
+                    // Render parsed blocks (formatted text or centered blue tables)
+                    blocks.forEachIndexed { index, block ->
+                        when (block) {
+                            is MessageBlock.Text -> {
+                                Text(
+                                    text = parseMarkdownToAnnotatedString(block.text),
+                                    color = Color(0xFF1E293B),
+                                    fontSize = 13.5.sp,
+                                    lineHeight = 20.sp
+                                )
+                            }
+                            is MessageBlock.Table -> {
+                                CenteredMarkdownTable(table = block)
+                            }
+                        }
+                        if (index < blocks.lastIndex) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(6.dp))
 
@@ -448,42 +741,90 @@ private fun BotMessageBubble(
                 }
             }
 
-            // Action triggers if present
-            if (showContactActions) {
+            // Action triggers — converted to native mobile buttons with SINGLE official icons (no double emoji)
+            if (hasAnyAction) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
-                        onClick = onContactClick,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.height(34.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Chat,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("WhatsApp", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    // Row 1: WhatsApp + Call Us
+                    if (showWhatsApp || showCall) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (showWhatsApp) {
+                                Button(
+                                    onClick = onWhatsAppClick,
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                    shape = RoundedCornerShape(14.dp),
+                                    modifier = Modifier.height(34.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_whatsapp),
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("WhatsApp", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                            if (showCall) {
+                                OutlinedButton(
+                                    onClick = onCallClick,
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                    shape = RoundedCornerShape(14.dp),
+                                    border = BorderStroke(1.dp, Color(0xFF0284C7)),
+                                    modifier = Modifier.height(34.dp)
+                                ) {
+                                    Icon(Icons.Default.Phone, null, tint = Color(0xFF0284C7), modifier = Modifier.size(14.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Call Us", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0284C7))
+                                }
+                            }
+                        }
                     }
-
-                    OutlinedButton(
-                        onClick = onCallClick,
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        border = BorderStroke(1.dp, Color(0xFF0284C7)),
-                        modifier = Modifier.height(34.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Phone,
-                            contentDescription = null,
-                            tint = Color(0xFF0284C7),
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Call Us", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0284C7))
+                    // Row 2: Live Demo + Schedule Call
+                    if (showDemo || showSchedule) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (showDemo) {
+                                OutlinedButton(
+                                    onClick = onDemoClick,
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                    shape = RoundedCornerShape(14.dp),
+                                    border = BorderStroke(1.dp, Color(0xFF7C3AED)),
+                                    modifier = Modifier.height(34.dp)
+                                ) {
+                                    Icon(Icons.Default.PlayArrow, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(14.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Live Demo", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7C3AED))
+                                }
+                            }
+                            if (showSchedule) {
+                                OutlinedButton(
+                                    onClick = onScheduleClick,
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                    shape = RoundedCornerShape(14.dp),
+                                    border = BorderStroke(1.dp, Color(0xFF0369A1)),
+                                    modifier = Modifier.height(34.dp)
+                                ) {
+                                    Icon(Icons.Default.CalendarMonth, null, tint = Color(0xFF0369A1), modifier = Modifier.size(14.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Schedule Call", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0369A1))
+                                }
+                            }
+                        }
+                    }
+                    // Row 3: Estimator
+                    if (showEstimator) {
+                        OutlinedButton(
+                            onClick = onEstimatorClick,
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(1.dp, Color(0xFF6366F1)),
+                            modifier = Modifier.height(34.dp)
+                        ) {
+                            Icon(Icons.Default.Calculate, null, tint = Color(0xFF6366F1), modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Cost Estimator", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6366F1))
+                        }
                     }
                 }
             }

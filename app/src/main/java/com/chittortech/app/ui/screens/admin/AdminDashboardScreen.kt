@@ -28,8 +28,13 @@ fun AdminDashboardScreen(
     kpi: AdminKpi,
     projects: List<Project>,
     invoices: List<Invoice>,
+    notifications: List<AppNotification> = emptyList(),
+    onSendNotification: (title: String, message: String) -> Unit = { _, _ -> },
+    onDeleteNotification: (id: String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    var showCreateNotifDialog by remember { mutableStateOf(false) }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -158,6 +163,127 @@ fun AdminDashboardScreen(
             }
         }
 
+        // ── Broadcast Notifications Management ──────────────────────────────
+        item {
+            Spacer(modifier = Modifier.height(20.dp))
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    SectionHeader(title = "📢 Broadcast Notifications")
+                    Button(
+                        onClick = { showCreateNotifDialog = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = CtPrimaryBlue),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.height(34.dp)
+                    ) {
+                        Icon(Icons.Default.AddAlert, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("New Alert", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+        }
+
+        if (notifications.isEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = CtCardWhite)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "No active broadcast notifications",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            "Tap 'New Alert' to broadcast an announcement to all app users.",
+                            fontSize = 11.5.sp,
+                            color = TextMuted,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+                }
+            }
+        } else {
+            items(notifications) { notif ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 8.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = CtCardWhite),
+                    elevation = CardDefaults.cardElevation(1.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(CtPrimaryLight),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Campaign, contentDescription = null, tint = CtPrimaryBlue, modifier = Modifier.size(20.dp))
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                notif.title,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                notif.message,
+                                fontSize = 12.sp,
+                                color = TextSecondary,
+                                lineHeight = 16.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                notif.timestamp?.toDate()?.let { d ->
+                                    java.text.SimpleDateFormat("dd MMM yyyy, hh:mm a", java.util.Locale.getDefault()).format(d)
+                                } ?: "Just now",
+                                fontSize = 10.sp,
+                                color = TextMuted
+                            )
+                        }
+                        IconButton(
+                            onClick = { onDeleteNotification(notif.id) },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.DeleteOutline,
+                                contentDescription = "Delete notification",
+                                tint = CtRed,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         // ── Recent Invoices ───────────────────────────────────────────────────
         item {
             Spacer(modifier = Modifier.height(20.dp))
@@ -173,6 +299,71 @@ fun AdminDashboardScreen(
         }
 
         item { Spacer(modifier = Modifier.height(16.dp)) }
+    }
+
+    // ── Broadcast Notification Dialog ─────────────────────────────────────────
+    if (showCreateNotifDialog) {
+        var notifTitle by remember { mutableStateOf("") }
+        var notifMessage by remember { mutableStateOf("") }
+
+        AlertDialog(
+            onDismissRequest = { showCreateNotifDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Campaign, contentDescription = null, tint = CtPrimaryBlue)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Broadcast Notification", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "This will send a live in-app notification to all mobile app users.",
+                        fontSize = 12.sp,
+                        color = TextSecondary
+                    )
+                    OutlinedTextField(
+                        value = notifTitle,
+                        onValueChange = { notifTitle = it },
+                        label = { Text("Title") },
+                        placeholder = { Text("e.g. 🎉 New Update Available") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                    OutlinedTextField(
+                        value = notifMessage,
+                        onValueChange = { notifMessage = it },
+                        label = { Text("Message") },
+                        placeholder = { Text("Enter notification description...") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (notifTitle.isNotBlank() && notifMessage.isNotBlank()) {
+                            onSendNotification(notifTitle.trim(), notifMessage.trim())
+                            showCreateNotifDialog = false
+                        }
+                    },
+                    enabled = notifTitle.isNotBlank() && notifMessage.isNotBlank(),
+                    colors = ButtonDefaults.buttonColors(containerColor = CtPrimaryBlue),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Broadcast Now", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCreateNotifDialog = false }) {
+                    Text("Cancel", color = TextSecondary)
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(18.dp)
+        )
     }
 }
 

@@ -13,3 +13,6 @@
 -keepclasseswithmembers class * {
     @kotlinx.serialization.Serializable <methods>;
 }
+
+# Keep ChittorTech models for Firebase/Serialization
+-keep class com.chittortech.app.model.** { *; }

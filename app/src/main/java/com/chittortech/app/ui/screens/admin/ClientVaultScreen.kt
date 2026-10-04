@@ -62,7 +62,7 @@ fun ClientVaultScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(projects) { project ->
-                    val client = clients.find { it.uid == project.clientId }
+                    val client = clients.find { it.uid == project.clientId || it.email.equals(project.clientId, ignoreCase = true) }
                     ProjectDossierCard(project = project, client = client)
                 }
                 item { Spacer(modifier = Modifier.height(80.dp)) }
