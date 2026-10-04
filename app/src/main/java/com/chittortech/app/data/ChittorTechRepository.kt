@@ -92,12 +92,13 @@ class ChittorTechRepository {
             val cleanEmail = user.email.trim().lowercase()
             val docKey = cleanEmail.ifBlank { user.uid }
             val updates = hashMapOf<String, Any>(
-                "Name" to user.displayName,        // capital N — original field
-                "name" to user.displayName,
-                "displayName" to user.displayName,
+                "Name" to user.displayName,
                 "phone" to user.phone,
-                "phoneNumber" to user.phone,
-                "updatedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
+                "updatedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp(),
+                // Automatically clean up duplicate lowercase/camelCase keys from Firestore
+                "name" to com.google.firebase.firestore.FieldValue.delete(),
+                "displayName" to com.google.firebase.firestore.FieldValue.delete(),
+                "phoneNumber" to com.google.firebase.firestore.FieldValue.delete()
             )
             val docRef = db.collection("users").document(docKey)
             docRef.set(updates, com.google.firebase.firestore.SetOptions.merge()).await()
@@ -121,8 +122,8 @@ class ChittorTechRepository {
             val cleanEmail = (authUser?.email ?: userEmail).trim().lowercase()
             if (cleanEmail.isNotBlank()) {
                 val updates = mapOf(
-                    "password" to newPassword,
-                    "Password" to newPassword
+                    "Password" to newPassword,
+                    "password" to com.google.firebase.firestore.FieldValue.delete()
                 )
                 try {
                     db.collection("users").document(cleanEmail).set(updates, com.google.firebase.firestore.SetOptions.merge()).await()
