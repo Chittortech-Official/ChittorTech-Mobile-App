@@ -93,24 +93,24 @@ module.exports = async (req, res) => {
             A login attempt to the <strong>ChittorTech Administrator Portal</strong> failed authentication on the <strong>Official Mobile App</strong>. Access was denied immediately.
           </div>
 
-          <div class="table-box">
-            <div class="table-row">
-              <span class="label">Target Platform:</span>
-              <span class="val">${appPlatform}</span>
-            </div>
-            <div class="table-row">
-              <span class="label">Attempted Email:</span>
-              <span class="danger-val">${cleanEmail}</span>
-            </div>
-            <div class="table-row">
-              <span class="label">Status:</span>
-              <span class="danger-val">ACCESS DENIED (${failureReason})</span>
-            </div>
-            <div class="table-row">
-              <span class="label">Timestamp:</span>
-              <span class="val">${nowIST}</span>
-            </div>
-          </div>
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc; border: 1px solid #fee2e2; border-radius: 12px; margin-bottom: 24px; border-collapse: separate; overflow: hidden;">
+            <tr>
+              <td style="padding: 12px 16px; border-bottom: 1px solid #edf2f7; font-size: 13px; color: #64748b; font-weight: 600; width: 36%;">Target Platform:</td>
+              <td style="padding: 12px 16px; border-bottom: 1px solid #edf2f7; font-size: 13px; color: #0f172a; font-weight: 700; text-align: right;">${appPlatform}</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 16px; border-bottom: 1px solid #edf2f7; font-size: 13px; color: #64748b; font-weight: 600; width: 36%;">Attempted Email:</td>
+              <td style="padding: 12px 16px; border-bottom: 1px solid #edf2f7; font-size: 13.5px; color: #dc2626; font-weight: 800; text-align: right;">${cleanEmail}</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 16px; border-bottom: 1px solid #edf2f7; font-size: 13px; color: #64748b; font-weight: 600; width: 36%;">Security Status:</td>
+              <td style="padding: 12px 16px; border-bottom: 1px solid #edf2f7; font-size: 13px; color: #dc2626; font-weight: 800; text-align: right;">BLOCKED (${failureReason})</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 16px; font-size: 13px; color: #64748b; font-weight: 600; width: 36%;">Incident Timestamp:</td>
+              <td style="padding: 12px 16px; font-size: 13px; color: #0f172a; font-weight: 700; text-align: right;">${nowIST}</td>
+            </tr>
+          </table>
 
           <div class="warning-card">
             <strong>Action Recommended:</strong> If neither Kush Sharma nor Lav Sharma initiated this attempt, an unauthorized party may be attempting to guess the admin credentials. No OTP was issued.

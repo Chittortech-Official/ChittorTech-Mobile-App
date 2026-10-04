@@ -119,20 +119,20 @@ module.exports = async (req, res) => {
             A sign-in request was initiated for your account on the <strong>${appPlatform}</strong>. Use the one-time security code below to authorize your session.
           </div>
 
-          <div class="info-card">
-            <div class="info-row">
-              <span class="info-label">Application:</span>
-              <span class="info-val">${appPlatform}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Target Portal:</span>
-              <span class="info-val">${portalName}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Timestamp:</span>
-              <span class="info-val">${nowIST}</span>
-            </div>
-          </div>
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 22px; border-collapse: separate; overflow: hidden;">
+            <tr>
+              <td style="padding: 10px 14px; border-bottom: 1px solid #edf2f7; font-size: 13px; color: #64748b; font-weight: 600; width: 36%;">Application:</td>
+              <td style="padding: 10px 14px; border-bottom: 1px solid #edf2f7; font-size: 13px; color: #0f172a; font-weight: 700; text-align: right;">${appPlatform}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 14px; border-bottom: 1px solid #edf2f7; font-size: 13px; color: #64748b; font-weight: 600; width: 36%;">Target Portal:</td>
+              <td style="padding: 10px 14px; border-bottom: 1px solid #edf2f7; font-size: 13px; color: #0f172a; font-weight: 700; text-align: right;">${portalName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 14px; font-size: 13px; color: #64748b; font-weight: 600; width: 36%;">Timestamp:</td>
+              <td style="padding: 10px 14px; font-size: 13px; color: #0f172a; font-weight: 700; text-align: right;">${nowIST}</td>
+            </tr>
+          </table>
 
           <div class="otp-box">
             <div class="otp-code">${otp}</div>
