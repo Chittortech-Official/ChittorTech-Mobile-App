@@ -46,8 +46,8 @@
 ## 2. ⚡ Vercel Serverless OTP Microservice
 
 * **Vercel Account:** `chittortech@gmail.com`
-* **Local Source Directory:** `vercel-otp-service/`
-* **Deployment URL:** Configurable (e.g. `https://chittortech-otp-service.vercel.app`)
+* **Production URL:** `https://chittor-tech-mobile-app.vercel.app`
+* **Local Source Directory:** `vercel-otp-service/` and root `api/`
 
 ### Environment Variables Configured in Vercel:
 | Key | Example / Description |
