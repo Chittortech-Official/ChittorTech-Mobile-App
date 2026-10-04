@@ -92,6 +92,7 @@ class ChittorTechRepository {
             val cleanEmail = user.email.trim().lowercase()
             val docKey = cleanEmail.ifBlank { user.uid }
             val updates = hashMapOf<String, Any>(
+                "Name" to user.displayName,        // capital N — original field
                 "name" to user.displayName,
                 "displayName" to user.displayName,
                 "phone" to user.phone,
