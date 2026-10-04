@@ -37,7 +37,7 @@ class ChittorTechRepository {
     val isLoggedIn: Flow<Boolean> = authState.map { it.currentUser != null }
     val currentUid: String? get() = auth.currentUser?.uid
 
-    suspend fun signInWithEmail(email: String, password: String): Result<String> {
+    suspend fun signInWithEmail(email: String, password: String, expectedRole: String = ""): Result<String> {
         val cleanEmail = email.trim().lowercase()
         return try {
             // 1. Try Firebase Auth first
@@ -67,8 +67,19 @@ class ChittorTechRepository {
                     }
                 }
                 val role = doc.getString("role") ?: doc.getString("Role") ?: "client"
+                if (expectedRole.isNotBlank()) {
+                    if (expectedRole.equals("admin", ignoreCase = true) && !role.equals("admin", ignoreCase = true)) {
+                        return Result.failure(Exception("Access denied. You do not have administrator privileges."))
+                    }
+                    if (expectedRole.equals("client", ignoreCase = true) && !role.equals("client", ignoreCase = true)) {
+                        return Result.failure(Exception("Account not authorized for Corporate Portal. Please check your credentials."))
+                    }
+                }
                 Result.success(role)
             } else if (authUser != null) {
+                if (expectedRole.isNotBlank() && expectedRole.equals("admin", ignoreCase = true)) {
+                    return Result.failure(Exception("Access denied. You do not have administrator privileges."))
+                }
                 Result.success("client")
             } else {
                 Result.failure(Exception("Account not found. Please verify your email & password."))
@@ -89,8 +100,17 @@ class ChittorTechRepository {
         }
 
         val role = doc.getString("role") ?: doc.getString("Role") ?: "client"
-        if (expectedRole.isNotBlank() && expectedRole.equals("admin", ignoreCase = true) && !role.equals("admin", ignoreCase = true)) {
-            return Result.failure(Exception("Access denied. You do not have administrator privileges."))
+        if (expectedRole.isNotBlank()) {
+            if (expectedRole.equals("admin", ignoreCase = true)) {
+                if (!role.equals("admin", ignoreCase = true)) {
+                    return Result.failure(Exception("Access denied. You do not have administrator privileges."))
+                }
+            } else if (expectedRole.equals("client", ignoreCase = true)) {
+                if (!role.equals("client", ignoreCase = true)) {
+                    // Do not expose admin existence; strictly reject corporate access
+                    return Result.failure(Exception("Account not authorized for Corporate Portal. Please check your credentials."))
+                }
+            }
         }
 
         val user = CtUser(

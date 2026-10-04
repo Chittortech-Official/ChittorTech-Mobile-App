@@ -194,21 +194,36 @@ fun LoginScreen(
                         label = "Guest",
                         icon = Icons.Default.Explore,
                         isSelected = selectedTab == LoginRoleTab.GUEST,
-                        onClick = { selectedTab = LoginRoleTab.GUEST },
+                        onClick = {
+                            selectedTab = LoginRoleTab.GUEST
+                            localError = null
+                            otpSession = null
+                            otpError = null
+                        },
                         modifier = Modifier.weight(1f)
                     )
                     RoleTabPill(
                         label = "Corporate",
                         icon = Icons.Default.Business,
                         isSelected = selectedTab == LoginRoleTab.CORPORATE,
-                        onClick = { selectedTab = LoginRoleTab.CORPORATE },
+                        onClick = {
+                            selectedTab = LoginRoleTab.CORPORATE
+                            localError = null
+                            otpSession = null
+                            otpError = null
+                        },
                         modifier = Modifier.weight(1f)
                     )
                     RoleTabPill(
                         label = "Admin",
                         icon = Icons.Default.AdminPanelSettings,
                         isSelected = selectedTab == LoginRoleTab.ADMIN,
-                        onClick = { selectedTab = LoginRoleTab.ADMIN },
+                        onClick = {
+                            selectedTab = LoginRoleTab.ADMIN
+                            localError = null
+                            otpSession = null
+                            otpError = null
+                        },
                         modifier = Modifier.weight(1f)
                     )
                 }

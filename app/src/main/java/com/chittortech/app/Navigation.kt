@@ -117,11 +117,16 @@ fun MainNavigation(
                         onLoginSuccess = { email, password, role ->
                             loginError = null
                             scope.launch {
-                                val result = repository.signInWithEmail(email, password)
+                                val result = repository.signInWithEmail(email, password, role)
                                 result.onFailure { e ->
                                     loginError = e.message ?: "Sign-in failed. Please verify credentials."
                                 }
                                 result.onSuccess { assignedRole ->
+                                    if (role.isNotBlank() && !assignedRole.equals(role, ignoreCase = true)) {
+                                        loginError = "Account not authorized for this portal."
+                                        repository.signOut()
+                                        return@launch
+                                    }
                                     val user = repository.getCurrentUser() ?: repository.getUserByEmail(email)
                                     currentUser = user ?: CtUser(
                                         uid = email.trim().lowercase(),
