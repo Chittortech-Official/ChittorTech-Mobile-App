@@ -35,25 +35,30 @@ module.exports = async (req, res) => {
       .update(`${cleanEmail}:${otp}:${expiresAt}`)
       .digest('hex');
 
-    // 4. Configure Titan Mail SMTP Transporter
-    const titanUser = process.env.TITAN_USER || 'business@chittortech.in';
-    const titanPass = process.env.TITAN_PASSWORD;
+    // 4. Configure SMTP Transporter (GoDaddy / Titan compatible)
+    const smtpUser = (process.env.TITAN_USER || process.env.SMTP_USER || 'business@chittortech.in').trim();
+    const smtpPass = (process.env.TITAN_PASSWORD || process.env.SMTP_PASSWORD || '').trim();
+    const smtpHost = (process.env.SMTP_HOST || 'smtpout.secureserver.net').trim();
+    const smtpPort = Number(process.env.SMTP_PORT) || 465;
 
-    if (!titanPass) {
-      console.warn('TITAN_PASSWORD environment variable is not configured.');
+    if (!smtpPass) {
+      console.warn('Mail password is not configured.');
       return res.status(500).json({
         success: false,
-        message: 'Titan Mail password not configured in Vercel environment variables.'
+        message: 'Mail password not configured in Vercel environment variables.'
       });
     }
 
     const transporter = nodemailer.createTransport({
-      host: 'smtp.titan.email',
-      port: 465,
-      secure: true, // SSL
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
       auth: {
-        user: titanUser,
-        pass: titanPass
+        user: smtpUser,
+        pass: smtpPass
+      },
+      tls: {
+        rejectUnauthorized: false
       }
     });
 
@@ -113,7 +118,7 @@ module.exports = async (req, res) => {
 
     // 6. Send the Email
     await transporter.sendMail({
-      from: `"ChittorTech Security" <${titanUser}>`,
+      from: `"ChittorTech Security" <${smtpUser}>`,
       to: cleanEmail,
       subject: `Your ChittorTech Security Code: ${otp}`,
       text: `Your ChittorTech one-time security code is ${otp}. Valid for 5 minutes. Do not share this code.`,
