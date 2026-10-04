@@ -37,8 +37,8 @@
 | Parameter | Value | Notes |
 | :--- | :--- | :--- |
 | **Official Email** | `business@chittortech.in` | Sender for all 2FA security codes & alerts |
-| **SMTP Host** | `smtp.titan.email` | Official Titan Mail server |
-| **Port** | `465` (SSL) / `587` (TLS) | Encrypted transport |
+| **SMTP Host** | `smtpout.secureserver.net` | GoDaddy Business Email SMTP server (Verified & Live) |
+| **Port** | `465` (SSL) | Encrypted transport |
 | **Authentication** | Username: `business@chittortech.in`<br>Password: Configured in Vercel Secrets | Passwords are never stored in the Android APK |
 
 ---
