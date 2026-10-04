@@ -93,22 +93,34 @@ module.exports = async (req, res) => {
             A login attempt to the <strong>ChittorTech Administrator Portal</strong> failed authentication on the <strong>Official Mobile App</strong>. Access was denied immediately.
           </div>
 
-          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc; border: 1px solid #fee2e2; border-radius: 12px; margin-bottom: 24px; border-collapse: separate; overflow: hidden;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border: 1px solid #fecaca; border-radius: 12px; margin-bottom: 24px; border-collapse: separate; overflow: hidden; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.04);">
+            <!-- Row 1: Target Platform -->
             <tr>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #edf2f7; font-size: 13px; color: #64748b; font-weight: 600; width: 36%;">Target Platform:</td>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #edf2f7; font-size: 13px; color: #0f172a; font-weight: 700; text-align: right;">${appPlatform}</td>
+              <td style="padding: 14px 18px; border-bottom: 1px solid #fee2e2; background-color: #fffaf0;">
+                <div style="font-size: 11px; font-weight: 800; color: #9a3412; text-transform: uppercase; letter-spacing: 0.8px;">TARGET PLATFORM</div>
+                <div style="font-size: 14.5px; font-weight: 700; color: #1e293b; margin-top: 4px;">📱 ${appPlatform}</div>
+              </td>
             </tr>
+            <!-- Row 2: Attempted Email -->
             <tr>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #edf2f7; font-size: 13px; color: #64748b; font-weight: 600; width: 36%;">Attempted Email:</td>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #edf2f7; font-size: 13.5px; color: #dc2626; font-weight: 800; text-align: right;">${cleanEmail}</td>
+              <td style="padding: 14px 18px; border-bottom: 1px solid #fee2e2; background-color: #fff5f5;">
+                <div style="font-size: 11px; font-weight: 800; color: #991b1b; text-transform: uppercase; letter-spacing: 0.8px;">ATTEMPTED EMAIL</div>
+                <div style="font-size: 15px; font-weight: 800; color: #dc2626; margin-top: 4px; word-break: break-all;">✉️ ${cleanEmail}</div>
+              </td>
             </tr>
+            <!-- Row 3: Security Status -->
             <tr>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #edf2f7; font-size: 13px; color: #64748b; font-weight: 600; width: 36%;">Security Status:</td>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #edf2f7; font-size: 13px; color: #dc2626; font-weight: 800; text-align: right;">BLOCKED (${failureReason})</td>
+              <td style="padding: 14px 18px; border-bottom: 1px solid #fee2e2; background-color: #ffffff;">
+                <div style="font-size: 11px; font-weight: 800; color: #b91c1c; text-transform: uppercase; letter-spacing: 0.8px;">SECURITY STATUS</div>
+                <div style="font-size: 14px; font-weight: 800; color: #b91c1c; margin-top: 4px;">⛔ ACCESS BLOCKED (${failureReason})</div>
+              </td>
             </tr>
+            <!-- Row 4: Incident Timestamp -->
             <tr>
-              <td style="padding: 12px 16px; font-size: 13px; color: #64748b; font-weight: 600; width: 36%;">Incident Timestamp:</td>
-              <td style="padding: 12px 16px; font-size: 13px; color: #0f172a; font-weight: 700; text-align: right;">${nowIST}</td>
+              <td style="padding: 14px 18px; background-color: #f8fafc;">
+                <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.8px;">INCIDENT TIMESTAMP</div>
+                <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 4px;">📅 ${nowIST}</div>
+              </td>
             </tr>
           </table>
 
