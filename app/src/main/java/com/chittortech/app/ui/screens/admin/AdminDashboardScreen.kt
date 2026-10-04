@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.chittortech.app.model.*
 import com.chittortech.app.theme.*
 import com.chittortech.app.ui.components.*
+import com.chittortech.app.util.*
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -28,12 +29,19 @@ fun AdminDashboardScreen(
     kpi: AdminKpi,
     projects: List<Project>,
     invoices: List<Invoice>,
+    leads: List<LeadInquiry> = emptyList(),
+    tickets: List<SupportTicket> = emptyList(),
     notifications: List<AppNotification> = emptyList(),
     onSendNotification: (title: String, message: String) -> Unit = { _, _ -> },
     onDeleteNotification: (id: String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showCreateNotifDialog by remember { mutableStateOf(false) }
+
+    val openTicketsCount = remember(tickets) { tickets.count { it.status != "RESOLVED" } }
+    val newLeadsCount = remember(leads) { leads.count { it.status.equals("new", ignoreCase = true) } }
+    val totalUnpaidDues = remember(invoices) { invoices.filter { it.status != "PAID" }.sumOf { it.amount } }
+    val totalPaidRevenue = remember(invoices) { invoices.filter { it.status == "PAID" }.sumOf { it.amount } }
 
     LazyColumn(
         modifier = modifier
@@ -83,32 +91,32 @@ fun AdminDashboardScreen(
             }
         }
 
-        // ── Financial KPI Grid ────────────────────────────────────────────────
+        // ── Financial & Operations KPI Grid ───────────────────────────────────
         item {
             Column(modifier = Modifier.padding(horizontal = 16.dp).padding(top = 16.dp)) {
-                SectionHeader(title = "📊 Financial Overview")
+                SectionHeader(title = "📊 Financial & Operations Overview")
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     KpiCard(
-                        title = "Monthly Invoiced",
-                        value = "₹${kpi.totalMonthlyInvoiced.fmtAmount()}",
-                        subtitle = "Collected (PAID)",
+                        title = "Collected Revenue",
+                        value = "₹${totalPaidRevenue.fmtAmount()}",
+                        subtitle = "Paid Invoices",
                         icon = Icons.Default.CurrencyRupee,
                         iconBg = CtGreenLight,
                         iconTint = CtGreen,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f).height(108.dp)
                     )
                     KpiCard(
                         title = "Outstanding",
-                        value = "₹${kpi.totalOutstandingDues.fmtAmount()}",
-                        subtitle = "Pending dues",
+                        value = "₹${totalUnpaidDues.fmtAmount()}",
+                        subtitle = "Pending client dues",
                         icon = Icons.Default.Warning,
                         iconBg = CtRedLight,
                         iconTint = CtRed,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f).height(108.dp)
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
@@ -117,23 +125,84 @@ fun AdminDashboardScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     KpiCard(
-                        title = "Active Deployments",
-                        value = kpi.activeDeployments.toString(),
-                        subtitle = "Live client projects",
+                        title = "Active Projects",
+                        value = projects.size.toString(),
+                        subtitle = "${projects.count { it.status.contains("Live", true) }} Live Deployments",
                         icon = Icons.Default.CloudDone,
                         iconBg = CtPrimaryLight,
                         iconTint = CtPrimaryBlue,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f).height(108.dp)
                     )
                     KpiCard(
                         title = "Open Tickets",
-                        value = kpi.openTickets.toString(),
+                        value = openTicketsCount.toString(),
                         subtitle = "Awaiting resolution",
                         icon = Icons.Default.SupportAgent,
                         iconBg = CtAmberLight,
                         iconTint = CtAmber,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f).height(108.dp)
                     )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                // Full Width Incoming Leads Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = CtCardWhite),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(Color(0xFFF3E8FF)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.ContactMail,
+                                    contentDescription = null,
+                                    tint = Color(0xFF8B5CF6),
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    "Incoming Leads Pipeline",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextPrimary
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    "${leads.size} total direct inquiries from Web & App",
+                                    fontSize = 11.5.sp,
+                                    color = TextSecondary
+                                )
+                            }
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (newLeadsCount > 0) CtAmberLight else CtGreenLight
+                        ) {
+                            Text(
+                                text = if (newLeadsCount > 0) "$newLeadsCount New" else "All Handled",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (newLeadsCount > 0) CtAmber else CtGreen,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -416,12 +485,4 @@ private fun daysUntil(dateStr: String): Int? {
         val target = LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
         ChronoUnit.DAYS.between(LocalDate.now(), target).toInt()
     } catch (e: Exception) { null }
-}
-
-private fun Long.fmtAmount(): String {
-    return when {
-        this >= 100000 -> "%.1fL".format(this / 100000.0)
-        this >= 1000   -> "%.1fK".format(this / 1000.0)
-        else           -> this.toString()
-    }
 }

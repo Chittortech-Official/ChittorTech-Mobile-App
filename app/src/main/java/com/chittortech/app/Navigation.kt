@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chittortech.app.data.ChittorTechRepository
+import com.chittortech.app.data.OtpAuthService
 import com.chittortech.app.model.CtUser
 import com.chittortech.app.theme.VyaparBlue
 import com.chittortech.app.ui.main.AdminMainScreen
@@ -30,7 +31,6 @@ fun MainNavigation(
     var currentUser by remember { mutableStateOf<CtUser?>(null) }
     var isLoadingUser by remember { mutableStateOf(false) }
     var loginError by remember { mutableStateOf<String?>(null) }
-    var adminViewMode by remember { mutableStateOf<String>("admin") } // "admin" or "vyapar"
 
     // When auth state changes (user logged in via Firebase Auth), fetch user profile
     LaunchedEffect(isLoggedIn) {
@@ -66,6 +66,44 @@ fun MainNavigation(
                     LoginScreen(
                         isLoading = false,
                         errorMessage = loginError,
+                        onRequestOtp = { email, password, role, onSessionReady, onError ->
+                            loginError = null
+                            scope.launch {
+                                // 1. First validate credentials against Firestore
+                                val credResult = repository.validateCredentials(email, password, role)
+                                if (credResult.isFailure) {
+                                    val err = credResult.exceptionOrNull()?.message ?: "Invalid email or password."
+                                    onError(err)
+                                    return@launch
+                                }
+                                val user = credResult.getOrNull()!!
+
+                                // 2. Dispatch OTP email via Titan Mail / Vercel Serverless
+                                val otpResult = OtpAuthService.sendOtp(
+                                    email = email,
+                                    name = user.displayName,
+                                    role = role
+                                )
+                                otpResult.onSuccess { session ->
+                                    onSessionReady(session)
+                                }
+                                otpResult.onFailure { err ->
+                                    onError(err.message ?: "Failed to dispatch verification code.")
+                                }
+                            }
+                        },
+                        onVerifyOtp = { email, otp, token, expiresAt, onSuccess, onError ->
+                            loginError = null
+                            scope.launch {
+                                val verifyResult = OtpAuthService.verifyOtp(email, otp, token, expiresAt)
+                                verifyResult.onSuccess {
+                                    onSuccess()
+                                }
+                                verifyResult.onFailure { err ->
+                                    onError(err.message ?: "Invalid verification code.")
+                                }
+                            }
+                        },
                         onLoginSuccess = { email, password, role ->
                             loginError = null
                             scope.launch {
@@ -84,9 +122,8 @@ fun MainNavigation(
                                 }
                             }
                         },
-                        onDirectRoleAccess = { role, user ->
+                        onDirectRoleAccess = { _, user ->
                             currentUser = user
-                            adminViewMode = if (role == "admin") "admin" else "vyapar"
                         }
                     )
                 }
@@ -103,26 +140,13 @@ fun MainNavigation(
                             )
                         }
                         "admin" -> {
-                            if (adminViewMode == "admin") {
-                                AdminMainScreen(
-                                    user = user,
-                                    repository = repository,
-                                    onSignOut = {
-                                        currentUser = null
-                                    },
-                                    onOpenVyapar = {
-                                        adminViewMode = "vyapar"
-                                    }
-                                )
-                            } else {
-                                VyaparMainScreen(
-                                    user = user,
-                                    repository = repository,
-                                    onSignOut = {
-                                        currentUser = null
-                                    }
-                                )
-                            }
+                            AdminMainScreen(
+                                user = user,
+                                repository = repository,
+                                onSignOut = {
+                                    currentUser = null
+                                }
+                            )
                         }
                         else -> {
                             // Guest Explorer / Public Mode

@@ -15,7 +15,18 @@ class ChittorTechRepository {
     private val auth: FirebaseAuth = Firebase.auth
     private val db = Firebase.firestore
 
-    // ─── Auth State ───────────────────────────────────────────────────────────
+    init {
+        try {
+            db.collection("settings").document("auth").addSnapshotListener { snap, _ ->
+                if (snap != null && snap.exists()) {
+                    val url = snap.getString("vercelBaseUrl") ?: snap.getString("apiUrl")
+                    if (!url.isNullOrBlank()) {
+                        OtpAuthService.vercelBaseUrl = url.trim().removeSuffix("/")
+                    }
+                }
+            }
+        } catch (_: Exception) {}
+    }
 
     val authState: Flow<FirebaseAuth> = callbackFlow {
         val listener = FirebaseAuth.AuthStateListener { trySend(it) }
@@ -65,6 +76,35 @@ class ChittorTechRepository {
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    suspend fun validateCredentials(email: String, password: String, expectedRole: String = ""): Result<CtUser> {
+        val cleanEmail = email.trim().lowercase()
+        val doc = fetchUserDoc(cleanEmail, email.trim())
+            ?: return Result.failure(Exception("Account not found. Please verify your registered email address."))
+
+        val storedPass = doc.getString("Password") ?: doc.getString("password")
+        if (storedPass != null && storedPass != password.trim()) {
+            return Result.failure(Exception("Incorrect password. Please verify your credentials."))
+        }
+
+        val role = doc.getString("role") ?: doc.getString("Role") ?: "client"
+        if (expectedRole.isNotBlank() && expectedRole.equals("admin", ignoreCase = true) && !role.equals("admin", ignoreCase = true)) {
+            return Result.failure(Exception("Access denied. You do not have administrator privileges."))
+        }
+
+        val user = CtUser(
+            uid = doc.id,
+            email = doc.getString("Email") ?: doc.getString("email") ?: cleanEmail,
+            displayName = doc.getString("Name")
+                ?: doc.getString("name")
+                ?: doc.getString("displayName")
+                ?: cleanEmail.substringBefore("@"),
+            companyName = doc.getString("companyName") ?: "",
+            role = role,
+            phone = doc.getString("phone") ?: ""
+        )
+        return Result.success(user)
     }
 
     suspend fun getUserByEmail(email: String): CtUser? {
@@ -402,7 +442,64 @@ class ChittorTechRepository {
 
     suspend fun updateInvoiceStatus(invoiceId: String, status: String): Result<Unit> {
         return try {
-            db.collection("invoices").document(invoiceId).update("status", status).await()
+            val allInvoiceDocs = db.collection("invoices").get().await()
+            for (doc in allInvoiceDocs.documents) {
+                if (doc.contains("invoices")) {
+                    @Suppress("UNCHECKED_CAST")
+                    val rawList = doc.get("invoices") as? List<Map<String, Any>> ?: emptyList()
+                    val targetIdx = rawList.indexOfFirst { (it["invoiceId"] as? String) == invoiceId }
+                    if (targetIdx != -1) {
+                        val updatedList = rawList.toMutableList()
+                        val oldInv = HashMap(updatedList[targetIdx])
+                        oldInv["status"] = status
+                        updatedList[targetIdx] = oldInv
+                        doc.reference.update("invoices", updatedList).await()
+                        return Result.success(Unit)
+                    }
+                } else if (doc.id == invoiceId) {
+                    doc.reference.update("status", status).await()
+                    return Result.success(Unit)
+                }
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateProjectMilestone(
+        projectId: String,
+        clientId: String,
+        progress: Int,
+        phase: String,
+        status: String
+    ): Result<Unit> {
+        return try {
+            val cleanEmail = clientId.trim().lowercase()
+            val docKey = cleanEmail.ifBlank { projectId.ifBlank { "proj_default" } }
+            val docRef = db.collection("projects").document(docKey)
+            val docSnap = docRef.get().await()
+            if (docSnap.exists()) {
+                docRef.update(
+                    mapOf(
+                        "milestoneProgress" to progress,
+                        "currentPhase" to phase,
+                        "status" to status
+                    )
+                ).await()
+                return Result.success(Unit)
+            }
+            val q = db.collection("projects").whereEqualTo("clientId", clientId).get().await()
+            for (d in q.documents) {
+                d.reference.update(
+                    mapOf(
+                        "milestoneProgress" to progress,
+                        "currentPhase" to phase,
+                        "status" to status
+                    )
+                ).await()
+                return Result.success(Unit)
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -602,7 +699,47 @@ class ChittorTechRepository {
         awaitClose { listener.remove() }
     }
 
-    // ─── Leads & Inquiries (Website CRM) ──────────────────────────────────────
+    // ─── Leads & Inquiries (Website & App CRM) ────────────────────────────────
+    fun observeIncomingLeads(): Flow<List<LeadInquiry>> = callbackFlow {
+        val listener = db.collection("leads")
+            .addSnapshotListener { snap, error ->
+                if (error != null) {
+                    trySend(emptyList())
+                    return@addSnapshotListener
+                }
+                val list = snap?.documents?.mapNotNull { doc ->
+                    val source = doc.getString("source") ?: ""
+                    // Filter: Only include incoming leads (website or app), NOT outbound
+                    if (source.contains("outbound", ignoreCase = true)) {
+                        null
+                    } else {
+                        LeadInquiry(
+                            leadId = doc.id,
+                            name = doc.getString("name") ?: "",
+                            email = doc.getString("email") ?: "",
+                            contact = doc.getString("contact") ?: doc.getString("phone") ?: "",
+                            company = doc.getString("company") ?: "",
+                            service = doc.getString("service") ?: "",
+                            message = doc.getString("message") ?: "",
+                            source = if (source.isBlank()) "Website / App" else source,
+                            status = doc.getString("status") ?: "new",
+                            createdAt = doc.getTimestamp("createdAt")
+                        )
+                    }
+                }?.sortedByDescending { it.createdAt?.seconds } ?: emptyList()
+                trySend(list)
+            }
+        awaitClose { listener.remove() }
+    }
+
+    suspend fun updateLeadStatus(leadId: String, status: String): Result<Unit> {
+        return try {
+            db.collection("leads").document(leadId).update("status", status).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
     suspend fun submitLead(lead: LeadInquiry): Result<Unit> {
         return try {

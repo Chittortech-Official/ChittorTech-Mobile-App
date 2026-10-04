@@ -81,25 +81,48 @@ fun KpiCard(
         colors = CardDefaults.cardColors(containerColor = CtCardWhite),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
+                        .size(34.dp)
+                        .clip(RoundedCornerShape(8.dp))
                         .background(iconBg),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(20.dp))
+                    Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(18.dp))
                 }
-                Spacer(modifier = Modifier.width(10.dp))
-                Text(title, fontSize = 12.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = title,
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1
+                )
             }
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(value, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-            if (subtitle.isNotBlank()) {
-                Spacer(modifier = Modifier.height(3.dp))
-                Text(subtitle, fontSize = 11.sp, color = TextMuted)
+            Column {
+                Text(
+                    text = value,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    maxLines = 1
+                )
+                if (subtitle.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = subtitle,
+                        fontSize = 11.sp,
+                        color = TextMuted,
+                        maxLines = 1
+                    )
+                }
             }
         }
     }

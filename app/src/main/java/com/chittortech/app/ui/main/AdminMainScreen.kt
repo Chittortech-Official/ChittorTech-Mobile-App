@@ -23,9 +23,10 @@ import kotlinx.coroutines.launch
 
 enum class AdminTab(val label: String, val icon: ImageVector) {
     DASHBOARD("Dashboard", Icons.Default.Dashboard),
-    INVOICES("Invoices", Icons.Default.Receipt),
+    PROJECTS("Projects", Icons.Default.AccountTree),
+    INVOICES("Invoices", Icons.Default.ReceiptLong),
     TICKETS("Tickets", Icons.Default.SupportAgent),
-    VAULT("Vault", Icons.Default.Security)
+    LEADS("Leads", Icons.Default.ContactMail)
 }
 
 // ─── Admin Main Screen ────────────────────────────────────────────────────────
@@ -36,7 +37,6 @@ fun AdminMainScreen(
     user: CtUser,
     repository: ChittorTechRepository,
     onSignOut: () -> Unit = {},
-    onOpenVyapar: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val scope = rememberCoroutineScope()
@@ -48,7 +48,13 @@ fun AdminMainScreen(
     val invoices by repository.observeAllInvoices().collectAsStateWithLifecycle(emptyList())
     val tickets by repository.observeAllTickets().collectAsStateWithLifecycle(emptyList())
     val clients by repository.observeAllClients().collectAsStateWithLifecycle(emptyList())
+    val leads by repository.observeIncomingLeads().collectAsStateWithLifecycle(emptyList())
     val notifications by repository.observeNotifications().collectAsStateWithLifecycle(emptyList())
+
+    // Badge counts
+    val openTicketsCount = remember(tickets) { tickets.count { it.status.equals("OPEN", ignoreCase = true) } }
+    val newLeadsCount = remember(leads) { leads.count { it.status.equals("new", ignoreCase = true) } }
+    val unpaidInvoicesCount = remember(invoices) { invoices.count { it.status.equals("UNPAID", ignoreCase = true) } }
 
     Scaffold(
         topBar = {
@@ -69,9 +75,6 @@ fun AdminMainScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onOpenVyapar) {
-                        Icon(Icons.Default.Storefront, contentDescription = "Quick Launch / Services", tint = CtPrimaryBlue)
-                    }
                     IconButton(onClick = {
                         repository.signOut()
                         onSignOut()
@@ -88,19 +91,38 @@ fun AdminMainScreen(
                 tonalElevation = 8.dp
             ) {
                 AdminTab.entries.forEach { tab ->
+                    val badgeCount = when (tab) {
+                        AdminTab.TICKETS -> openTicketsCount
+                        AdminTab.LEADS -> newLeadsCount
+                        AdminTab.INVOICES -> unpaidInvoicesCount
+                        else -> 0
+                    }
+
                     NavigationBarItem(
                         selected = currentTab == tab,
-                        onClick  = { currentTab = tab },
+                        onClick = { currentTab = tab },
                         icon = {
-                            Icon(tab.icon, contentDescription = tab.label)
+                            BadgedBox(
+                                badge = {
+                                    if (badgeCount > 0) {
+                                        Badge(
+                                            containerColor = if (tab == AdminTab.TICKETS) CtRed else CtAmber
+                                        ) {
+                                            Text(badgeCount.toString(), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            ) {
+                                Icon(tab.icon, contentDescription = tab.label)
+                            }
                         },
                         label = {
                             Text(tab.label, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                         },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor   = CtAmber,
-                            selectedTextColor   = CtAmber,
-                            indicatorColor      = CtAmberLight,
+                            selectedIconColor = CtPrimaryBlue,
+                            selectedTextColor = CtPrimaryBlue,
+                            indicatorColor = CtPrimaryLight,
                             unselectedIconColor = TextMuted,
                             unselectedTextColor = TextMuted
                         )
@@ -122,6 +144,8 @@ fun AdminMainScreen(
                     kpi = kpi,
                     projects = projects,
                     invoices = invoices,
+                    leads = leads,
+                    tickets = tickets,
                     notifications = notifications,
                     onSendNotification = { title, message ->
                         scope.launch { repository.sendNotification(title, message) }
@@ -131,25 +155,44 @@ fun AdminMainScreen(
                     }
                 )
 
+                AdminTab.PROJECTS -> ProjectControlRoomScreen(
+                    projects = projects,
+                    clients = clients,
+                    onUpdateMilestone = { projectId, clientId, progress, phase, status ->
+                        scope.launch {
+                            repository.updateProjectMilestone(projectId, clientId, progress, phase, status)
+                        }
+                    },
+                    onSaveProject = { project ->
+                        scope.launch { repository.saveProject(project) }
+                    }
+                )
+
                 AdminTab.INVOICES -> InvoiceBuilderScreen(
-                    clients          = clients,
-                    projects         = projects,
+                    clients = clients,
+                    projects = projects,
                     existingInvoices = invoices,
-                    onCreateInvoice  = { invoice ->
+                    onCreateInvoice = { invoice ->
                         scope.launch { repository.createInvoice(invoice) }
+                    },
+                    onUpdateInvoiceStatus = { invoiceId, status ->
+                        scope.launch { repository.updateInvoiceStatus(invoiceId, status) }
                     }
                 )
 
                 AdminTab.TICKETS -> AdminTicketResolverScreen(
                     tickets = tickets,
+                    clients = clients,
                     onUpdateTicket = { ticketId, status, note ->
                         scope.launch { repository.updateTicketStatus(ticketId, status, note) }
                     }
                 )
 
-                AdminTab.VAULT -> ClientVaultScreen(
-                    clients  = clients,
-                    projects = projects
+                AdminTab.LEADS -> AdminLeadsScreen(
+                    leads = leads,
+                    onUpdateLeadStatus = { leadId, status ->
+                        scope.launch { repository.updateLeadStatus(leadId, status) }
+                    }
                 )
             }
         }
