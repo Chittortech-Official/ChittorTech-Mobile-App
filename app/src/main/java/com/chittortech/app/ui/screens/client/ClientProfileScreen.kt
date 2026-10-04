@@ -9,7 +9,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -56,290 +58,406 @@ fun ClientProfileScreen(
             .background(CtBackground)
             .verticalScroll(rememberScrollState())
     ) {
-        // ─── Dynamic Enterprise Tech Header with Animated Canvas ───
+        // ─── Premium FinTech / VIP Card Header with Curved Bottom Wave ───
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
         ) {
-            // Background Canvas: Deep space gradient + glowing orbs + cyber dot matrix + accent circuits
+            // Background Canvas: Royal Sapphire Gradient + Ambient Light + Organic Curved Bottom Wave
             Canvas(
                 modifier = Modifier.matchParentSize()
             ) {
                 val canvasWidth = size.width
                 val canvasHeight = size.height
 
-                // 1. Futuristic Base Gradient
-                drawRect(
+                // 1. Organic Curved Bottom Wave Path
+                val wavePath = Path().apply {
+                    moveTo(0f, 0f)
+                    lineTo(canvasWidth, 0f)
+                    lineTo(canvasWidth, canvasHeight - 24.dp.toPx())
+                    quadraticBezierTo(
+                        canvasWidth * 0.5f, canvasHeight + 14.dp.toPx(),
+                        0f, canvasHeight - 24.dp.toPx()
+                    )
+                    close()
+                }
+
+                // 2. Royal Sapphire Deep Corporate Gradient
+                drawPath(
+                    path = wavePath,
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xFF030712), // Deep cosmic black
-                            Color(0xFF0A1628), // Sapphire night
-                            Color(0xFF0F1E36), // High-tech navy
-                            Color(0xFF132238)  // Deep slate blue
+                            Color(0xFF031633), // Deep Navy Midnight
+                            Color(0xFF07295E), // Deep Sapphire Blue
+                            Color(0xFF0A479D), // Royal ChittorTech Blue
+                            Color(0xFF0284C7)  // Electric Cyan Accent
                         )
                     )
                 )
 
-                // 2. Ambient Glowing Orbs
-                // Top-left Electric Cyan Glow
+                // 3. Ambient Glowing Light Orbs
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(Color(0xFF06B6D4).copy(alpha = 0.30f * pulseGlow), Color.Transparent),
-                        center = Offset(canvasWidth * 0.15f, canvasHeight * 0.25f),
-                        radius = canvasWidth * 0.55f
-                    ),
-                    center = Offset(canvasWidth * 0.15f, canvasHeight * 0.25f),
-                    radius = canvasWidth * 0.55f
-                )
-
-                // Center-behind-avatar Royal Sapphire Glow
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color(0xFF3B82F6).copy(alpha = 0.35f * pulseGlow), Color.Transparent),
-                        center = Offset(canvasWidth * 0.5f, canvasHeight * 0.42f),
-                        radius = canvasWidth * 0.45f
-                    ),
-                    center = Offset(canvasWidth * 0.5f, canvasHeight * 0.42f),
-                    radius = canvasWidth * 0.45f
-                )
-
-                // Bottom-right Violet Tech Glow
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color(0xFF8B5CF6).copy(alpha = 0.22f), Color.Transparent),
-                        center = Offset(canvasWidth * 0.88f, canvasHeight * 0.70f),
+                        colors = listOf(Color(0xFF38BDF8).copy(alpha = 0.35f * pulseGlow), Color.Transparent),
+                        center = Offset(canvasWidth * 0.85f, canvasHeight * 0.22f),
                         radius = canvasWidth * 0.50f
                     ),
-                    center = Offset(canvasWidth * 0.88f, canvasHeight * 0.70f),
+                    center = Offset(canvasWidth * 0.85f, canvasHeight * 0.22f),
                     radius = canvasWidth * 0.50f
                 )
 
-                // 3. Cyber Dot Matrix Grid Pattern
-                val dotSpacing = 28.dp.toPx()
-                val dotRadius = 1.1.dp.toPx()
-                var x = 14.dp.toPx()
-                while (x < canvasWidth) {
-                    var y = 14.dp.toPx()
-                    while (y < canvasHeight) {
-                        drawCircle(
-                            color = Color(0xFF38BDF8).copy(alpha = 0.08f),
-                            radius = dotRadius,
-                            center = Offset(x, y)
-                        )
-                        y += dotSpacing
-                    }
-                    x += dotSpacing
-                }
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(Color(0xFF6366F1).copy(alpha = 0.22f), Color.Transparent),
+                        center = Offset(canvasWidth * 0.15f, canvasHeight * 0.70f),
+                        radius = canvasWidth * 0.45f
+                    ),
+                    center = Offset(canvasWidth * 0.15f, canvasHeight * 0.70f),
+                    radius = canvasWidth * 0.45f
+                )
 
-                // 4. Subtle Decorative Tech Circuit Lines
-                drawLine(
-                    color = Color(0xFF38BDF8).copy(alpha = 0.15f),
-                    start = Offset(0f, canvasHeight * 0.88f),
-                    end = Offset(canvasWidth * 0.35f, canvasHeight * 0.88f),
-                    strokeWidth = 1.2.dp.toPx()
-                )
-                drawLine(
-                    color = Color(0xFF38BDF8).copy(alpha = 0.15f),
-                    start = Offset(canvasWidth * 0.35f, canvasHeight * 0.88f),
-                    end = Offset(canvasWidth * 0.42f, canvasHeight * 0.96f),
-                    strokeWidth = 1.2.dp.toPx()
-                )
-                drawLine(
-                    color = Color(0xFF38BDF8).copy(alpha = 0.15f),
-                    start = Offset(canvasWidth * 0.42f, canvasHeight * 0.96f),
-                    end = Offset(canvasWidth, canvasHeight * 0.96f),
-                    strokeWidth = 1.2.dp.toPx()
-                )
+                // 4. Subtle Ambient Tech Pinstripes
+                val step = 36.dp.toPx()
+                var gx = step
+                while (gx < canvasWidth) {
+                    drawLine(
+                        color = Color.White.copy(alpha = 0.035f),
+                        start = Offset(gx, 0f),
+                        end = Offset(gx, canvasHeight - 32.dp.toPx()),
+                        strokeWidth = 0.8.dp.toPx()
+                    )
+                    gx += step
+                }
             }
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 22.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(top = 16.dp, bottom = 26.dp)
             ) {
-                // Top Live Enterprise Badge
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = Color(0xFF0F172A).copy(alpha = 0.65f),
-                    border = BorderStroke(
-                        1.dp,
-                        Brush.horizontalGradient(
-                            listOf(
-                                Color(0xFF38BDF8).copy(alpha = 0.7f),
-                                Color(0xFF818CF8).copy(alpha = 0.7f),
-                                Color(0xFFC084FC).copy(alpha = 0.4f)
-                            )
-                        )
-                    ),
-                    shadowElevation = 4.dp
+                // Top Branding Row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Pulsing Green Live Node Dot
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
-                                .size(8.dp)
+                                .size(28.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFF10B981).copy(alpha = pulseGlow))
-                        )
-                        Spacer(modifier = Modifier.width(7.dp))
-                        Text(
-                            text = "CLIENT PORTAL • ENTERPRISE NODE",
-                            fontSize = 10.5.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFFE0F2FE),
-                            letterSpacing = 1.sp
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(18.dp))
-
-                // Avatar with Dual-Layered Gradient Ring & Verified Badge
-                Box(
-                    modifier = Modifier.size(96.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // Outer Glowing Ring (Gradient border)
-                    Box(
-                        modifier = Modifier
-                            .size(92.dp)
-                            .clip(CircleShape)
-                            .background(
-                                Brush.sweepGradient(
-                                    listOf(
-                                        Color(0xFF38BDF8),
-                                        Color(0xFF6366F1),
-                                        Color(0xFFA855F7),
-                                        Color(0xFF38BDF8)
-                                    )
-                                )
-                            )
-                            .padding(3.dp)
-                    ) {
-                        // Inner Dark Glassmorphic Avatar
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(CircleShape)
-                                .background(
-                                    Brush.verticalGradient(
-                                        listOf(
-                                            Color(0xFF1E293B),
-                                            Color(0xFF0F172A)
-                                        )
-                                    )
-                                ),
+                                .background(Color.White.copy(alpha = 0.15f))
+                                .border(1.dp, Color.White.copy(alpha = 0.25f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
+                            Icon(
+                                Icons.Default.WorkspacePremium,
+                                contentDescription = null,
+                                tint = Color(0xFFFBBF24),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
                             Text(
-                                text = currentUserState.companyName.take(2).uppercase().ifBlank {
-                                    currentUserState.displayName.take(2).uppercase().ifBlank { "CT" }
-                                },
-                                fontSize = 30.sp,
+                                text = "CHITTORTECH ENTERPRISE",
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Black,
                                 color = Color.White,
+                                letterSpacing = 0.8.sp
+                            )
+                            Text(
+                                text = "Official Client Network",
+                                fontSize = 9.sp,
+                                color = Color.White.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+
+                    // Live Client Portal Chip
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color(0xFF0F172A).copy(alpha = 0.55f),
+                        border = BorderStroke(1.dp, Color(0xFF38BDF8).copy(alpha = 0.5f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF10B981).copy(alpha = pulseGlow))
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "CLIENT PORTAL",
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFFE0F2FE),
                                 letterSpacing = 0.5.sp
                             )
                         }
                     }
+                }
 
-                    // Verified Badge Icon at bottom-right
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // ─── 3D Glowing Glass VIP Card ───
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .shadow(elevation = 12.dp, shape = RoundedCornerShape(22.dp)),
+                    shape = RoundedCornerShape(22.dp),
+                    color = Color.Transparent,
+                    border = BorderStroke(
+                        width = 1.2.dp,
+                        brush = Brush.linearGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.55f),
+                                Color(0xFF38BDF8).copy(alpha = 0.45f),
+                                Color(0xFF818CF8).copy(alpha = 0.35f),
+                                Color.White.copy(alpha = 0.15f)
+                            )
+                        )
+                    )
+                ) {
                     Box(
                         modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .size(26.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF0284C7))
-                            .border(2.dp, Color(0xFF0F172A), CircleShape),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(
+                                        Color(0xFF0C254F).copy(alpha = 0.92f),
+                                        Color(0xFF061733).copy(alpha = 0.96f)
+                                    )
+                                )
+                            )
+                            .padding(18.dp)
                     ) {
-                        Icon(
-                            Icons.Default.Verified,
-                            contentDescription = "Verified Client",
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
+                        Column {
+                            // Card Top Row: EMV Chip & Authenticated Badge
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(width = 30.dp, height = 22.dp)
+                                            .clip(RoundedCornerShape(5.dp))
+                                            .background(
+                                                Brush.linearGradient(
+                                                    listOf(
+                                                        Color(0xFFFDE68A),
+                                                        Color(0xFFD97706)
+                                                    )
+                                                )
+                                            )
+                                            .border(0.8.dp, Color(0xFFF59E0B), RoundedCornerShape(5.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Nfc,
+                                            contentDescription = null,
+                                            tint = Color(0xFF78350F),
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "VIP ACCESS PASS",
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = Color(0xFFFDE68A),
+                                        letterSpacing = 1.2.sp
+                                    )
+                                }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0xFF0284C7).copy(alpha = 0.25f),
+                                    border = BorderStroke(0.8.dp, Color(0xFF38BDF8).copy(alpha = 0.5f))
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Default.VerifiedUser,
+                                            contentDescription = null,
+                                            tint = Color(0xFF38BDF8),
+                                            modifier = Modifier.size(11.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "AUTHENTICATED",
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFFE0F2FE),
+                                            letterSpacing = 0.5.sp
+                                        )
+                                    }
+                                }
+                            }
 
-                // Client Representative Name
-                Text(
-                    text = currentUserState.displayName.ifBlank { "Client Representative" },
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color.White,
-                    letterSpacing = 0.3.sp
-                )
+                            Spacer(modifier = Modifier.height(16.dp))
 
-                Spacer(modifier = Modifier.height(4.dp))
+                            // Card Middle: Avatar + Client Name & Details
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Avatar with Dual Glow Ring
+                                Box(
+                                    modifier = Modifier.size(68.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(66.dp)
+                                            .clip(CircleShape)
+                                            .background(
+                                                Brush.sweepGradient(
+                                                    listOf(
+                                                        Color(0xFF38BDF8),
+                                                        Color(0xFF6366F1),
+                                                        Color(0xFFEC4899),
+                                                        Color(0xFF38BDF8)
+                                                    )
+                                                )
+                                            )
+                                            .padding(2.5.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .clip(CircleShape)
+                                                .background(
+                                                    Brush.verticalGradient(
+                                                        listOf(
+                                                            Color(0xFF1E293B),
+                                                            Color(0xFF0F172A)
+                                                        )
+                                                    )
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = currentUserState.companyName.take(2).uppercase().ifBlank {
+                                                    currentUserState.displayName.take(2).uppercase().ifBlank { "CT" }
+                                                },
+                                                fontSize = 24.sp,
+                                                fontWeight = FontWeight.Black,
+                                                color = Color.White
+                                            )
+                                        }
+                                    }
 
-                // Enterprise / Company Badge
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color.White.copy(alpha = 0.12f),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.Business,
-                            contentDescription = null,
-                            tint = Color(0xFF93C5FD),
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = currentUserState.companyName.ifBlank { "Corporate Enterprise Client" },
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFFE2E8F0)
-                        )
-                    }
-                }
+                                    // Verified Badge Checkmark
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomEnd)
+                                            .size(20.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFF0284C7))
+                                            .border(1.5.dp, Color(0xFF0F172A), CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                    }
+                                }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                                Spacer(modifier = Modifier.width(14.dp))
 
-                // Security & Trust Badges Row
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = Color(0xFF0369A1).copy(alpha = 0.35f),
-                        border = BorderStroke(0.8.dp, Color(0xFF38BDF8).copy(alpha = 0.4f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.Shield, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(11.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("256-Bit Encrypted", fontSize = 10.sp, color = Color(0xFFE0F2FE), fontWeight = FontWeight.Medium)
-                        }
-                    }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = currentUserState.displayName.ifBlank { "Client Representative" },
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color.White
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            Icons.Default.Business,
+                                            contentDescription = null,
+                                            tint = Color(0xFF93C5FD),
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = currentUserState.companyName.ifBlank { "Enterprise Client" },
+                                            fontSize = 12.5.sp,
+                                            color = Color(0xFF93C5FD),
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = currentUserState.email,
+                                        fontSize = 11.sp,
+                                        color = Color.White.copy(alpha = 0.65f),
+                                        maxLines = 1
+                                    )
+                                }
+                            }
 
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = Color(0xFF15803D).copy(alpha = 0.35f),
-                        border = BorderStroke(0.8.dp, Color(0xFF4ADE80).copy(alpha = 0.4f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF4ADE80), modifier = Modifier.size(11.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Active Session", fontSize = 10.sp, color = Color(0xFFDCFCE7), fontWeight = FontWeight.Medium)
+                            Spacer(modifier = Modifier.height(14.dp))
+                            HorizontalDivider(color = Color.White.copy(alpha = 0.12f))
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Card Footer: Security & Session Status
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Default.Lock,
+                                        contentDescription = null,
+                                        tint = Color(0xFF38BDF8),
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    Text(
+                                        text = "256-BIT ENCRYPTED SESSION",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFFBAE6FD),
+                                        letterSpacing = 0.6.sp
+                                    )
+                                }
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFF10B981))
+                                    )
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    Text(
+                                        text = "PRIORITY ACTIVE",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF86EFAC),
+                                        letterSpacing = 0.6.sp
+                                    )
+                                }
+                            }
                         }
                     }
                 }
