@@ -17,9 +17,8 @@ data class OtpSession(
 )
 
 object OtpAuthService {
-    // Default Vercel Serverless endpoint. 
-    // You can also change this anytime after deploying your Vercel project!
-    var vercelBaseUrl: String = "https://chittortech-otp-service.vercel.app"
+    // Live Vercel Serverless Production Endpoint
+    var vercelBaseUrl: String = "https://chittor-tech-mobile-app.vercel.app"
 
     /**
      * Dispatches a 6-digit OTP email from business@chittortech.in via Titan Mail
