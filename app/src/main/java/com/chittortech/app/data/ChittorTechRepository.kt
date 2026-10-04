@@ -102,9 +102,11 @@ class ChittorTechRepository {
             )
             val docRef = db.collection("users").document(docKey)
             docRef.set(updates, com.google.firebase.firestore.SetOptions.merge()).await()
-            if (user.uid.isNotBlank() && user.uid != docKey) {
+
+            // If an accidental UID-based document was created previously, delete it to keep database clean
+            if (user.uid.isNotBlank() && user.uid != docKey && !user.uid.contains("@")) {
                 try {
-                    db.collection("users").document(user.uid).set(updates, com.google.firebase.firestore.SetOptions.merge()).await()
+                    db.collection("users").document(user.uid).delete().await()
                 } catch (_: Exception) {}
             }
             Result.success(Unit)
@@ -163,9 +165,11 @@ class ChittorTechRepository {
                 try {
                     db.collection("users").document(cleanEmail).set(updates, com.google.firebase.firestore.SetOptions.merge()).await()
                 } catch (_: Exception) {}
-                if (authUser?.uid != null && authUser.uid.isNotBlank() && authUser.uid != cleanEmail) {
+
+                // Clean up orphaned UID document if it exists
+                if (authUser?.uid != null && authUser.uid.isNotBlank() && authUser.uid != cleanEmail && !authUser.uid.contains("@")) {
                     try {
-                        db.collection("users").document(authUser.uid).set(updates, com.google.firebase.firestore.SetOptions.merge()).await()
+                        db.collection("users").document(authUser.uid).delete().await()
                     } catch (_: Exception) {}
                 }
             }
