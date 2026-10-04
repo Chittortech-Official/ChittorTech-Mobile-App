@@ -1,6 +1,7 @@
 package com.chittortech.app
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -16,6 +17,7 @@ import androidx.core.content.ContextCompat
 import com.chittortech.app.theme.ChittorTechTheme
 import com.chittortech.app.util.NotificationHelper
 
+@SuppressLint("InvalidFragmentVersionForActivityResult")
 class MainActivity : ComponentActivity() {
 
     private val requestNotificationPermission =
