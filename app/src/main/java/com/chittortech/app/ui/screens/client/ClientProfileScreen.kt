@@ -2,12 +2,14 @@ package com.chittortech.app.ui.screens.client
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,53 +39,309 @@ fun ClientProfileScreen(
     var showEditDialog by remember { mutableStateOf(false) }
     var showChangePasswordDialog by remember { mutableStateOf(false) }
 
+    val infiniteTransition = rememberInfiniteTransition(label = "portalPulse")
+    val pulseGlow by infiniteTransition.animateFloat(
+        initialValue = 0.45f,
+        targetValue = 0.90f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseGlow"
+    )
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(CtBackground)
             .verticalScroll(rememberScrollState())
     ) {
-        // Gradient Header with Avatar
+        // ─── Dynamic Enterprise Tech Header with Animated Canvas ───
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Brush.verticalGradient(listOf(CtPrimaryDark, CtPrimaryMid)))
                 .statusBarsPadding()
-                .padding(bottom = 32.dp)
         ) {
+            // Background Canvas: Deep space gradient + glowing orbs + cyber dot matrix + accent circuits
+            Canvas(
+                modifier = Modifier.matchParentSize()
+            ) {
+                val canvasWidth = size.width
+                val canvasHeight = size.height
+
+                // 1. Futuristic Base Gradient
+                drawRect(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFF030712), // Deep cosmic black
+                            Color(0xFF0A1628), // Sapphire night
+                            Color(0xFF0F1E36), // High-tech navy
+                            Color(0xFF132238)  // Deep slate blue
+                        )
+                    )
+                )
+
+                // 2. Ambient Glowing Orbs
+                // Top-left Electric Cyan Glow
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(Color(0xFF06B6D4).copy(alpha = 0.30f * pulseGlow), Color.Transparent),
+                        center = Offset(canvasWidth * 0.15f, canvasHeight * 0.25f),
+                        radius = canvasWidth * 0.55f
+                    ),
+                    center = Offset(canvasWidth * 0.15f, canvasHeight * 0.25f),
+                    radius = canvasWidth * 0.55f
+                )
+
+                // Center-behind-avatar Royal Sapphire Glow
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(Color(0xFF3B82F6).copy(alpha = 0.35f * pulseGlow), Color.Transparent),
+                        center = Offset(canvasWidth * 0.5f, canvasHeight * 0.42f),
+                        radius = canvasWidth * 0.45f
+                    ),
+                    center = Offset(canvasWidth * 0.5f, canvasHeight * 0.42f),
+                    radius = canvasWidth * 0.45f
+                )
+
+                // Bottom-right Violet Tech Glow
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(Color(0xFF8B5CF6).copy(alpha = 0.22f), Color.Transparent),
+                        center = Offset(canvasWidth * 0.88f, canvasHeight * 0.70f),
+                        radius = canvasWidth * 0.50f
+                    ),
+                    center = Offset(canvasWidth * 0.88f, canvasHeight * 0.70f),
+                    radius = canvasWidth * 0.50f
+                )
+
+                // 3. Cyber Dot Matrix Grid Pattern
+                val dotSpacing = 28.dp.toPx()
+                val dotRadius = 1.1.dp.toPx()
+                var x = 14.dp.toPx()
+                while (x < canvasWidth) {
+                    var y = 14.dp.toPx()
+                    while (y < canvasHeight) {
+                        drawCircle(
+                            color = Color(0xFF38BDF8).copy(alpha = 0.08f),
+                            radius = dotRadius,
+                            center = Offset(x, y)
+                        )
+                        y += dotSpacing
+                    }
+                    x += dotSpacing
+                }
+
+                // 4. Subtle Decorative Tech Circuit Lines
+                drawLine(
+                    color = Color(0xFF38BDF8).copy(alpha = 0.15f),
+                    start = Offset(0f, canvasHeight * 0.88f),
+                    end = Offset(canvasWidth * 0.35f, canvasHeight * 0.88f),
+                    strokeWidth = 1.2.dp.toPx()
+                )
+                drawLine(
+                    color = Color(0xFF38BDF8).copy(alpha = 0.15f),
+                    start = Offset(canvasWidth * 0.35f, canvasHeight * 0.88f),
+                    end = Offset(canvasWidth * 0.42f, canvasHeight * 0.96f),
+                    strokeWidth = 1.2.dp.toPx()
+                )
+                drawLine(
+                    color = Color(0xFF38BDF8).copy(alpha = 0.15f),
+                    start = Offset(canvasWidth * 0.42f, canvasHeight * 0.96f),
+                    end = Offset(canvasWidth, canvasHeight * 0.96f),
+                    strokeWidth = 1.2.dp.toPx()
+                )
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                    .padding(horizontal = 20.dp, vertical = 22.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Avatar circle
+                // Top Live Enterprise Badge
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color(0xFF0F172A).copy(alpha = 0.65f),
+                    border = BorderStroke(
+                        1.dp,
+                        Brush.horizontalGradient(
+                            listOf(
+                                Color(0xFF38BDF8).copy(alpha = 0.7f),
+                                Color(0xFF818CF8).copy(alpha = 0.7f),
+                                Color(0xFFC084FC).copy(alpha = 0.4f)
+                            )
+                        )
+                    ),
+                    shadowElevation = 4.dp
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Pulsing Green Live Node Dot
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF10B981).copy(alpha = pulseGlow))
+                        )
+                        Spacer(modifier = Modifier.width(7.dp))
+                        Text(
+                            text = "CLIENT PORTAL • ENTERPRISE NODE",
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFFE0F2FE),
+                            letterSpacing = 1.sp
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // Avatar with Dual-Layered Gradient Ring & Verified Badge
                 Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.2f))
-                        .border(2.dp, Color.White.copy(alpha = 0.5f), CircleShape),
+                    modifier = Modifier.size(96.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = currentUserState.companyName.take(2).uppercase().ifBlank { currentUserState.displayName.take(2).uppercase().ifBlank { "CT" } },
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
+                    // Outer Glowing Ring (Gradient border)
+                    Box(
+                        modifier = Modifier
+                            .size(92.dp)
+                            .clip(CircleShape)
+                            .background(
+                                Brush.sweepGradient(
+                                    listOf(
+                                        Color(0xFF38BDF8),
+                                        Color(0xFF6366F1),
+                                        Color(0xFFA855F7),
+                                        Color(0xFF38BDF8)
+                                    )
+                                )
+                            )
+                            .padding(3.dp)
+                    ) {
+                        // Inner Dark Glassmorphic Avatar
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            Color(0xFF1E293B),
+                                            Color(0xFF0F172A)
+                                        )
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = currentUserState.companyName.take(2).uppercase().ifBlank {
+                                    currentUserState.displayName.take(2).uppercase().ifBlank { "CT" }
+                                },
+                                fontSize = 30.sp,
+                                fontWeight = FontWeight.Black,
+                                color = Color.White,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+                    }
+
+                    // Verified Badge Icon at bottom-right
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .size(26.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF0284C7))
+                            .border(2.dp, Color(0xFF0F172A), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Verified,
+                            contentDescription = "Verified Client",
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(currentUserState.displayName, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text(currentUserState.companyName.ifBlank { "Corporate Client" }, fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
-                Spacer(modifier = Modifier.height(6.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(Color.White.copy(alpha = 0.2f))
-                        .padding(horizontal = 12.dp, vertical = 4.dp)
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Client Representative Name
+                Text(
+                    text = currentUserState.displayName.ifBlank { "Client Representative" },
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White,
+                    letterSpacing = 0.3.sp
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Enterprise / Company Badge
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.White.copy(alpha = 0.12f),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f))
                 ) {
-                    Text("CLIENT PORTAL", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Business,
+                            contentDescription = null,
+                            tint = Color(0xFF93C5FD),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = currentUserState.companyName.ifBlank { "Corporate Enterprise Client" },
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFFE2E8F0)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Security & Trust Badges Row
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFF0369A1).copy(alpha = 0.35f),
+                        border = BorderStroke(0.8.dp, Color(0xFF38BDF8).copy(alpha = 0.4f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Shield, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(11.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("256-Bit Encrypted", fontSize = 10.sp, color = Color(0xFFE0F2FE), fontWeight = FontWeight.Medium)
+                        }
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFF15803D).copy(alpha = 0.35f),
+                        border = BorderStroke(0.8.dp, Color(0xFF4ADE80).copy(alpha = 0.4f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF4ADE80), modifier = Modifier.size(11.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Active Session", fontSize = 10.sp, color = Color(0xFFDCFCE7), fontWeight = FontWeight.Medium)
+                        }
+                    }
                 }
             }
         }
