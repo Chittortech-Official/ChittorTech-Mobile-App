@@ -44,6 +44,7 @@ fun LoginScreen(
     onVerifyOtp: (email: String, otp: String, token: String, expiresAt: Long, onSuccess: () -> Unit, onError: (String) -> Unit) -> Unit = { _, _, _, _, _, _ -> },
     isLoading: Boolean = false,
     errorMessage: String? = null,
+    onShowOnboarding: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableStateOf(LoginRoleTab.GUEST) }
@@ -175,7 +176,35 @@ fun LoginScreen(
                 modifier = Modifier.padding(horizontal = 30.dp)
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Surface(
+                onClick = onShowOnboarding,
+                shape = RoundedCornerShape(20.dp),
+                color = Color.White.copy(alpha = 0.15f),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f))
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AutoAwesome,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Text(
+                        text = "App Tour & Feature Guide",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
 
             // ── 3-Way Login Mode Segmented Controller (Guest -> Corporate -> Admin) ──
             Surface(

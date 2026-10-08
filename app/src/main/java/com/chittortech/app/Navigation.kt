@@ -1,6 +1,7 @@
 package com.chittortech.app
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -15,6 +16,9 @@ import com.chittortech.app.theme.VyaparBlue
 import com.chittortech.app.ui.main.AdminMainScreen
 import com.chittortech.app.ui.main.ClientMainScreen
 import com.chittortech.app.ui.screens.auth.LoginScreen
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
+import com.chittortech.app.ui.screens.splash.ChittorTechOnboardingScreen
 import com.chittortech.app.ui.screens.splash.ChittorTechSplashScreen
 import com.chittortech.app.ui.vyapar.VyaparMainScreen
 import kotlinx.coroutines.launch
@@ -23,6 +27,12 @@ import kotlinx.coroutines.launch
 fun MainNavigation(
     repository: ChittorTechRepository = remember { ChittorTechRepository() }
 ) {
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("chittortech_app_prefs", Context.MODE_PRIVATE) }
+    var hasCompletedOnboarding by remember {
+        mutableStateOf(prefs.getBoolean("has_completed_onboarding", false))
+    }
+
     val scope = rememberCoroutineScope()
     var showSplash by remember { mutableStateOf(true) }
 
@@ -48,12 +58,22 @@ fun MainNavigation(
     }
 
     AnimatedContent(
-        targetState = showSplash,
-        label = "SplashTransition"
-    ) { isSplash ->
+        targetState = showSplash to hasCompletedOnboarding,
+        transitionSpec = {
+            fadeIn(animationSpec = tween(400)) togetherWith fadeOut(animationSpec = tween(400))
+        },
+        label = "SplashAndOnboardingTransition"
+    ) { (isSplash, isBoarded) ->
         if (isSplash) {
             ChittorTechSplashScreen(
                 onSplashFinished = { showSplash = false }
+            )
+        } else if (!isBoarded) {
+            ChittorTechOnboardingScreen(
+                onComplete = {
+                    prefs.edit().putBoolean("has_completed_onboarding", true).apply()
+                    hasCompletedOnboarding = true
+                }
             )
         } else {
             when {
@@ -66,6 +86,9 @@ fun MainNavigation(
                     LoginScreen(
                         isLoading = false,
                         errorMessage = loginError,
+                        onShowOnboarding = {
+                            hasCompletedOnboarding = false
+                        },
                         onRequestOtp = { email, password, role, onSessionReady, onError ->
                             loginError = null
                             scope.launch {
