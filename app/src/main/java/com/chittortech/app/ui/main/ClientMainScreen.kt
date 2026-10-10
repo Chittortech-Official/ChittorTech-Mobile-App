@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chittortech.app.data.ChittorTechRepository
+import com.chittortech.app.data.SessionManager
 import com.chittortech.app.model.CtUser
 import com.chittortech.app.theme.*
 import com.chittortech.app.ui.screens.client.*
@@ -49,6 +50,11 @@ fun ClientMainScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     var activeUser by remember(user) { mutableStateOf(user) }
+
+    // Update active timestamp whenever client navigates or interacts with the portal
+    LaunchedEffect(currentTab) {
+        SessionManager.updateLastActive(context)
+    }
 
     // Firebase live data (supports both UID and email as clientId)
     val project       by repository.observeClientProject(activeUser.uid, activeUser.email).collectAsStateWithLifecycle(null)
@@ -172,7 +178,7 @@ fun ClientMainScreen(
                     onViewInvoices    = { currentTab = ClientTab.INVOICES },
                     onRaiseTicket     = { currentTab = ClientTab.HELPDESK },
                     onContactEngineer = {
-                        val whatsapp = "https://wa.me/917997888448?text=Hello+ChittorTech+Team"
+                        val whatsapp = "https://wa.me/917597451057?text=Hello+ChittorTech+Team,+I+need+assistance+regarding+my+project."
                         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(whatsapp)))
                     }
                 )
@@ -206,6 +212,7 @@ fun ClientMainScreen(
                 ClientTab.PROFILE -> ClientProfileScreen(
                     user = activeUser,
                     onLogout = {
+                        SessionManager.clearSession(context)
                         repository.signOut()
                         onSignOut()
                     },

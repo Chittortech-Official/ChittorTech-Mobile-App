@@ -486,6 +486,24 @@ fun InfraStatusCard(project: Project, modifier: Modifier = Modifier) {
                 }
             }
 
+            if (project.hostingProvider.isNotBlank()) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.CloudQueue, contentDescription = null, tint = CtPrimaryBlue, modifier = Modifier.size(15.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Cloud Infrastructure: ", fontSize = 11.5.sp, color = TextSecondary)
+                    Text(
+                        project.hostingProvider + if (project.hostingSpecs.isNotBlank()) " (${project.hostingSpecs})" else "",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(14.dp))
 
             // ChittorTech Admin Note for Deeper Server Configs

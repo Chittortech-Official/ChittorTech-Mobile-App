@@ -53,6 +53,7 @@ data class Invoice(
     val invoiceId: String = "",
     val clientId: String = "",
     val projectId: String = "",
+    val projectName: String = "",
     val title: String = "",
     val lineItems: List<InvoiceLineItem> = emptyList(),
     val amount: Long = 0L,

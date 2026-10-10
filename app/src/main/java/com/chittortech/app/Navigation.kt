@@ -11,6 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chittortech.app.data.ChittorTechRepository
 import com.chittortech.app.data.OtpAuthService
+import com.chittortech.app.data.SessionManager
+import com.chittortech.app.data.SessionValidationResult
 import com.chittortech.app.model.CtUser
 import com.chittortech.app.theme.VyaparBlue
 import com.chittortech.app.ui.main.AdminMainScreen
@@ -41,6 +43,36 @@ fun MainNavigation(
     var currentUser by remember { mutableStateOf<CtUser?>(null) }
     var isLoadingUser by remember { mutableStateOf(false) }
     var loginError by remember { mutableStateOf<String?>(null) }
+
+    // ── Corporate Session Management (5-Day Inactivity & 7-Day Lifetime Policy) ──
+    LaunchedEffect(showSplash) {
+        if (!showSplash && currentUser == null) {
+            val sessionResult = SessionManager.validateSession(context)
+            when (sessionResult) {
+                is SessionValidationResult.Expired -> {
+                    SessionManager.clearSession(context)
+                    repository.signOut()
+                    currentUser = null
+                    loginError = sessionResult.message
+                }
+                is SessionValidationResult.Valid -> {
+                    isLoadingUser = true
+                    val user = repository.getCurrentUser() ?: repository.getUserByEmail(sessionResult.email)
+                    if (user != null) {
+                        currentUser = user
+                        SessionManager.updateLastActive(context)
+                    } else {
+                        SessionManager.clearSession(context)
+                        repository.signOut()
+                    }
+                    isLoadingUser = false
+                }
+                is SessionValidationResult.NoSession -> {
+                    // Normal login flow
+                }
+            }
+        }
+    }
 
     // When auth state changes (user logged in via Firebase Auth), fetch user profile
     LaunchedEffect(isLoggedIn) {
@@ -148,15 +180,20 @@ fun MainNavigation(
                                     if (role.isNotBlank() && !assignedRole.equals(role, ignoreCase = true)) {
                                         loginError = "Account not authorized for this portal."
                                         repository.signOut()
+                                        SessionManager.clearSession(context)
                                         return@launch
                                     }
                                     val user = repository.getCurrentUser() ?: repository.getUserByEmail(email)
-                                    currentUser = user ?: CtUser(
+                                    val finalUser = user ?: CtUser(
                                         uid = email.trim().lowercase(),
                                         email = email,
                                         displayName = email.substringBefore("@"),
                                         role = assignedRole
                                     )
+                                    if (assignedRole.equals("client", ignoreCase = true)) {
+                                        SessionManager.saveSession(context, email, "client")
+                                    }
+                                    currentUser = finalUser
                                 }
                             }
                         },
@@ -173,6 +210,8 @@ fun MainNavigation(
                                 user = user,
                                 repository = repository,
                                 onSignOut = {
+                                    SessionManager.clearSession(context)
+                                    repository.signOut()
                                     currentUser = null
                                 }
                             )
@@ -182,6 +221,8 @@ fun MainNavigation(
                                 user = user,
                                 repository = repository,
                                 onSignOut = {
+                                    SessionManager.clearSession(context)
+                                    repository.signOut()
                                     currentUser = null
                                 }
                             )

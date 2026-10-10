@@ -327,24 +327,31 @@ class ChittorTechRepository {
     fun observeClientProject(clientId: String, clientEmail: String = ""): Flow<Project?> = callbackFlow {
         val cleanEmail = clientEmail.trim().lowercase()
         val cleanId = clientId.trim()
-        val docKey = cleanEmail.ifBlank { cleanId }
+        val ids = listOf(cleanEmail, cleanId).filter { it.isNotBlank() }.distinct()
 
-        val listener = db.collection("projects").document(docKey)
+        if (ids.isEmpty()) {
+            trySend(null)
+            awaitClose {}
+            return@callbackFlow
+        }
+
+        val listener = db.collection("projects")
+            .whereIn("clientId", ids)
             .addSnapshotListener { snap, _ ->
-                if (snap != null && snap.exists()) {
-                    trySend(snap.toProject())
+                if (snap != null && !snap.isEmpty) {
+                    trySend(snap.documents.first().toProject())
                 } else {
-                    // Fallback to query by clientId / email
-                    val ids = listOf(cleanId, cleanEmail).filter { it.isNotBlank() }.distinct()
-                    if (ids.isNotEmpty()) {
-                        db.collection("projects").whereIn("clientId", ids).limit(1).get()
-                            .addOnSuccessListener { qSnap ->
-                                trySend(qSnap.documents.firstOrNull()?.toProject())
+                    // Fallback to checking document with ID == cleanEmail or cleanId
+                    val docKey = cleanEmail.ifBlank { cleanId }
+                    db.collection("projects").document(docKey).get()
+                        .addOnSuccessListener { doc ->
+                            if (doc != null && doc.exists()) {
+                                trySend(doc.toProject())
+                            } else {
+                                trySend(null)
                             }
-                            .addOnFailureListener { trySend(null) }
-                    } else {
-                        trySend(null)
-                    }
+                        }
+                        .addOnFailureListener { trySend(null) }
                 }
             }
         awaitClose { listener.remove() }
@@ -396,26 +403,41 @@ class ChittorTechRepository {
     fun observeClientInvoices(clientId: String, clientEmail: String = ""): Flow<List<Invoice>> = callbackFlow {
         val cleanEmail = clientEmail.trim().lowercase()
         val cleanId = clientId.trim()
-        val docKey = cleanEmail.ifBlank { cleanId }
+        val ids = listOf(cleanEmail, cleanId).filter { it.isNotBlank() }.distinct()
 
-        val listener = db.collection("invoices").document(docKey)
+        if (ids.isEmpty()) {
+            trySend(emptyList())
+            awaitClose {}
+            return@callbackFlow
+        }
+
+        val listener = db.collection("invoices")
+            .whereIn("clientId", ids)
             .addSnapshotListener { snap, _ ->
-                if (snap != null && snap.exists() && snap.contains("invoices")) {
-                    val list = snap.toInvoiceList()
-                    trySend(list.sortedByDescending { it.createdAt?.seconds })
-                } else {
-                    // Fallback to query
-                    val ids = listOf(cleanId, cleanEmail).filter { it.isNotBlank() }.distinct()
-                    if (ids.isNotEmpty()) {
-                        db.collection("invoices").whereIn("clientId", ids).get()
-                            .addOnSuccessListener { qSnap ->
-                                val list = qSnap.documents.mapNotNull { it.toInvoice() }
-                                trySend(list.sortedByDescending { it.createdAt?.seconds })
-                            }
-                            .addOnFailureListener { trySend(emptyList()) }
-                    } else {
-                        trySend(emptyList())
+                val list = mutableListOf<Invoice>()
+                if (snap != null && !snap.isEmpty) {
+                    for (doc in snap.documents) {
+                        if (doc.contains("invoices")) {
+                            list.addAll(doc.toInvoiceList())
+                        } else {
+                            list.add(doc.toInvoice())
+                        }
                     }
+                }
+                // Also check if a document with docKey == cleanEmail exists for legacy nested structure
+                val docKey = cleanEmail.ifBlank { cleanId }
+                if (list.isEmpty()) {
+                    db.collection("invoices").document(docKey).get()
+                        .addOnSuccessListener { legacyDoc ->
+                            if (legacyDoc.exists() && legacyDoc.contains("invoices")) {
+                                trySend(legacyDoc.toInvoiceList().sortedByDescending { it.createdAt?.seconds })
+                            } else {
+                                trySend(emptyList())
+                            }
+                        }
+                        .addOnFailureListener { trySend(emptyList()) }
+                } else {
+                    trySend(list.sortedByDescending { it.createdAt?.seconds })
                 }
             }
         awaitClose { listener.remove() }
@@ -834,11 +856,22 @@ class ChittorTechRepository {
 // ─── Extension Mappers ────────────────────────────────────────────────────────
 
 private fun com.google.firebase.firestore.DocumentSnapshot.toProject(): Project {
-    @Suppress("UNCHECKED_CAST")
+    val rawProgress = get("milestoneProgress")
+    val progressInt = when (rawProgress) {
+        is Number -> rawProgress.toInt()
+        is String -> rawProgress.toIntOrNull() ?: 0
+        else -> 0
+    }
+    val rawRenewal = get("annualRenewalFee")
+    val renewalLong = when (rawRenewal) {
+        is Number -> rawRenewal.toLong()
+        is String -> rawRenewal.toDoubleOrNull()?.toLong() ?: 0L
+        else -> 0L
+    }
     return Project(
         projectId = id,
         clientId = getString("clientId") ?: "",
-        name = getString("name") ?: "",
+        name = getString("name") ?: getString("title") ?: "",
         domain = getString("domain") ?: "",
         domainRegistrar = getString("domainRegistrar") ?: "",
         domainRegistrarEmail = getString("domainRegistrarEmail") ?: "",
@@ -853,10 +886,10 @@ private fun com.google.firebase.firestore.DocumentSnapshot.toProject(): Project 
         githubRepo = getString("githubRepo") ?: "",
         buildKickoffDate = getString("buildKickoffDate") ?: "",
         launchDate = getString("launchDate") ?: "",
-        annualRenewalFee = getLong("annualRenewalFee") ?: 0L,
-        status = getString("status") ?: "Live & Active",
+        annualRenewalFee = renewalLong,
+        status = getString("status") ?: "In Progress",
         currentPhase = getString("currentPhase") ?: "",
-        milestoneProgress = (getLong("milestoneProgress") ?: 0L).toInt(),
+        milestoneProgress = progressInt,
         sowPdfUrl = getString("sowPdfUrl") ?: ""
     )
 }
@@ -867,16 +900,23 @@ private fun com.google.firebase.firestore.DocumentSnapshot.toInvoice(): Invoice 
     val lineItems = rawItems.map {
         InvoiceLineItem(
             description = it["description"] as? String ?: "",
-            amount = (it["amount"] as? Long) ?: 0L
+            amount = (it["amount"] as? Number)?.toLong() ?: 0L
         )
+    }
+    val rawAmount = get("amount")
+    val amountLong = when (rawAmount) {
+        is Number -> rawAmount.toLong()
+        is String -> rawAmount.toDoubleOrNull()?.toLong() ?: 0L
+        else -> 0L
     }
     return Invoice(
         invoiceId = id,
         clientId = getString("clientId") ?: "",
         projectId = getString("projectId") ?: "",
+        projectName = getString("projectName") ?: getString("project") ?: "",
         title = getString("title") ?: "",
         lineItems = lineItems,
-        amount = getLong("amount") ?: 0L,
+        amount = amountLong,
         status = getString("status") ?: "UNPAID",
         dueDate = getString("dueDate") ?: "",
         invoicePdfUrl = getString("invoicePdfUrl") ?: "",
@@ -927,6 +967,7 @@ private fun com.google.firebase.firestore.DocumentSnapshot.toInvoiceList(): List
             invoiceId = map["invoiceId"] as? String ?: "",
             clientId = id,
             projectId = map["projectId"] as? String ?: "",
+            projectName = map["projectName"] as? String ?: "",
             title = map["title"] as? String ?: "",
             lineItems = lineItems,
             amount = (map["amount"] as? Number)?.toLong() ?: 0L,

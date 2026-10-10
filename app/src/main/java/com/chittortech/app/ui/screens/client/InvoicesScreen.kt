@@ -173,6 +173,10 @@ private fun InvoiceCard(
                     Text(invoice.invoiceId, fontSize = 11.sp, color = TextMuted, fontWeight = FontWeight.Medium)
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(invoice.title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    if (invoice.projectName.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(invoice.projectName, fontSize = 11.5.sp, color = CtPrimaryBlue, fontWeight = FontWeight.SemiBold)
+                    }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("Due: ${invoice.dueDate.ifBlank { "—" }}", fontSize = 11.sp, color = TextSecondary)
                 }

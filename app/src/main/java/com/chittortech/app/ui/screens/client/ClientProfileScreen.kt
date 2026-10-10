@@ -1,13 +1,18 @@
 package com.chittortech.app.ui.screens.client
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
@@ -40,6 +45,7 @@ fun ClientProfileScreen(
     var currentUserState by remember(user) { mutableStateOf(user) }
     var showEditDialog by remember { mutableStateOf(false) }
     var showChangePasswordDialog by remember { mutableStateOf(false) }
+    var showReferralPolicyDialog by remember { mutableStateOf(false) }
 
     val infiniteTransition = rememberInfiniteTransition(label = "portalPulse")
     val pulseGlow by infiniteTransition.animateFloat(
@@ -76,7 +82,7 @@ fun ClientProfileScreen(
                     moveTo(0f, 0f)
                     lineTo(canvasWidth, 0f)
                     lineTo(canvasWidth, canvasHeight - 24.dp.toPx())
-                    quadraticBezierTo(
+                    quadraticTo(
                         canvasWidth * 0.5f, canvasHeight + 14.dp.toPx(),
                         0f, canvasHeight - 24.dp.toPx()
                     )
@@ -548,6 +554,14 @@ fun ClientProfileScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Client Referral & Partner Rewards Card
+        ReferralPartnerCard(
+            user = currentUserState,
+            onShowPolicy = { showReferralPolicyDialog = true }
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         // ChittorTech Contact & Official Channels Card
         Card(
             modifier = Modifier
@@ -596,6 +610,19 @@ fun ClientProfileScreen(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = CtBorder)
 
+                // WhatsApp Support
+                ClickableContactRow(
+                    icon = Icons.AutoMirrored.Filled.Chat,
+                    label = "WhatsApp Tech Support",
+                    value = "+91 7597451057",
+                    onClick = {
+                        val whatsappIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/917597451057?text=Hello+ChittorTech+Team,+I+need+assistance+regarding+my+project."))
+                        context.startActivity(whatsappIntent)
+                    }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = CtBorder)
+
                 // Website
                 ClickableContactRow(
                     icon = Icons.Default.Language,
@@ -634,6 +661,33 @@ fun ClientProfileScreen(
                         )
                     }
                 }
+
+                // Security & Session Expiry Policy Box
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color(0xFFF8FAFC),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = null,
+                            tint = Color(0xFF64748B),
+                            modifier = Modifier.size(18.dp).padding(top = 1.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Corporate Session Policy: Your login remains securely active for up to 7 days. If no activity is detected for 5 consecutive days, your session will automatically log out for enterprise security. Re-authentication via 2FA OTP will be required upon expiry.",
+                            fontSize = 11.5.sp,
+                            color = Color(0xFF475569),
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
             }
         }
 
@@ -649,7 +703,7 @@ fun ClientProfileScreen(
             colors = ButtonDefaults.buttonColors(containerColor = CtRedLight),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Icon(Icons.Default.Logout, contentDescription = null, tint = CtRed)
+            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = CtRed)
             Spacer(modifier = Modifier.width(8.dp))
             Text("Sign Out", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = CtRed)
         }
@@ -694,6 +748,19 @@ fun ClientProfileScreen(
                     onComplete(success, err)
                 }
             }
+        )
+    }
+
+    if (showReferralPolicyDialog) {
+        val cleanName = (currentUserState.companyName.ifBlank { currentUserState.displayName })
+            .replace(Regex("[^A-Za-z0-9]"), "")
+            .uppercase()
+            .take(12)
+            .ifBlank { "CLIENT" }
+        val refCode = "CT-REF-$cleanName"
+        ReferralPolicyDialog(
+            referralCode = refCode,
+            onDismiss = { showReferralPolicyDialog = false }
         )
     }
 }
@@ -777,7 +844,7 @@ private fun ClickableContactRow(
                 color = CtPrimaryBlue
             )
         }
-        Icon(Icons.Default.OpenInNew, contentDescription = null, tint = TextMuted, modifier = Modifier.size(16.dp))
+        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, tint = TextMuted, modifier = Modifier.size(16.dp))
     }
 }
 
@@ -1133,4 +1200,569 @@ private fun ChangePasswordDialog(
             }
         }
     )
+}
+
+@Composable
+private fun ReferralPartnerCard(
+    user: CtUser,
+    onShowPolicy: () -> Unit
+) {
+    val context = LocalContext.current
+    val cleanName = remember(user) {
+        (user.companyName.ifBlank { user.displayName })
+            .replace(Regex("[^A-Za-z0-9]"), "")
+            .uppercase()
+            .take(12)
+            .ifBlank { "CLIENT" }
+    }
+    val referralCode = "CT-REF-$cleanName"
+    val shareMessage = "Hey! I recommend ChittorTech for world-class mobile apps, enterprise web portals, and custom software. Use my partner referral code *$referralCode* when consulting them to get priority onboarding and enterprise perks: https://chittortech.in or WhatsApp +91 7597451057"
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CtCardWhite),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Header Row (Standard style matching other cards)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(CtPrimaryLight),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.CardGiftcard,
+                        contentDescription = null,
+                        tint = CtPrimaryBlue,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Partner & Client Referral",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Earn 5%–10% payout on client conversions",
+                        fontSize = 11.5.sp,
+                        color = TextSecondary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Referral Code Display Container
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFFF8FAFC),
+                border = BorderStroke(1.dp, CtBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "YOUR UNIQUE REFERRAL ID",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextMuted,
+                            letterSpacing = 0.5.sp
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = referralCode,
+                            fontSize = 15.5.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = CtPrimaryBlue,
+                            letterSpacing = 0.8.sp
+                        )
+                    }
+
+                    FilledTonalButton(
+                        onClick = {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            val clip = ClipData.newPlainText("ChittorTech Referral Code", referralCode)
+                            clipboard.setPrimaryClip(clip)
+                            Toast.makeText(context, "Referral Code $referralCode copied!", Toast.LENGTH_SHORT).show()
+                        },
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = CtPrimaryLight,
+                            contentColor = CtPrimaryBlue
+                        )
+                    ) {
+                        Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Copy", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Key Perks List (Unified with ProfileRow style)
+            ProfileRow(
+                icon = Icons.Default.MonetizationOn,
+                label = "Commission Incentive",
+                value = "5% to 10% Direct Payout per Converted Client"
+            )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = CtBorder)
+            ProfileRow(
+                icon = Icons.Default.AccountBalanceWallet,
+                label = "Settlement Method",
+                value = "Direct Transfer to Registered UPI / Bank Account"
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Primary 1-Tap WhatsApp Share Button
+            Button(
+                onClick = {
+                    try {
+                        val waIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, shareMessage)
+                            setPackage("com.whatsapp")
+                        }
+                        context.startActivity(waIntent)
+                    } catch (e: Exception) {
+                        val generalShare = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, shareMessage)
+                        }
+                        context.startActivity(Intent.createChooser(generalShare, "Share Referral Code"))
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(46.dp),
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366))
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.Chat,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = Color.White
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Share on WhatsApp",
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Secondary Share Row (Email & Share Sheet)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = {
+                        val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+                            data = Uri.parse("mailto:?subject=" + Uri.encode("Enterprise Tech Referral - ChittorTech") + "&body=" + Uri.encode(shareMessage))
+                        }
+                        try {
+                            context.startActivity(Intent.createChooser(emailIntent, "Send Email Invite"))
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "No email client found", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    modifier = Modifier.weight(1f).height(42.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, CtBorder)
+                ) {
+                    Icon(Icons.Default.MailOutline, contentDescription = null, modifier = Modifier.size(16.dp), tint = CtPrimaryBlue)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Email Invite", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, shareMessage)
+                        }
+                        context.startActivity(Intent.createChooser(shareIntent, "Share Referral Details"))
+                    },
+                    modifier = Modifier.weight(1f).height(42.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, CtBorder)
+                ) {
+                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp), tint = CtPrimaryBlue)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("More Options", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // View Program Policy & Payout Details Surface (Clean & clickable)
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable(onClick = onShowPolicy),
+                shape = RoundedCornerShape(10.dp),
+                color = Color(0xFFEFF6FF),
+                border = BorderStroke(1.dp, Color(0xFFBFDBFE))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = null,
+                            tint = CtPrimaryBlue,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "View Program Policy & Payout Rules",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = CtPrimaryBlue
+                        )
+                    }
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        tint = CtPrimaryBlue,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReferralPolicyDialog(
+    referralCode: String,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(20.dp),
+        containerColor = CtCardWhite,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(CtPrimaryLight),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.CardGiftcard,
+                        contentDescription = null,
+                        tint = CtPrimaryBlue,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        "Referral & Partner Policy",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                    Text(
+                        "Program rules & payout workflow",
+                        fontSize = 11.5.sp,
+                        color = TextSecondary
+                    )
+                }
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Referral Code Highlight
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFF8FAFC),
+                    border = BorderStroke(1.dp, CtBorder),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "YOUR REFERRAL CODE",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextMuted,
+                                letterSpacing = 0.5.sp
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                referralCode,
+                                fontSize = 15.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = CtPrimaryBlue
+                            )
+                        }
+                        FilledTonalButton(
+                            onClick = {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                val clip = ClipData.newPlainText("ChittorTech Referral Code", referralCode)
+                                clipboard.setPrimaryClip(clip)
+                                Toast.makeText(context, "Referral Code $referralCode copied!", Toast.LENGTH_SHORT).show()
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = CtPrimaryLight,
+                                contentColor = CtPrimaryBlue
+                            )
+                        ) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy", tint = CtPrimaryBlue, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Copy", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                // Program Overview
+                Text(
+                    text = "ChittorTech values strategic client partnerships. When you refer businesses or startups that build their digital platforms with us, you receive a direct monetary reward upon project execution.",
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    lineHeight = 17.sp
+                )
+
+                // 4-Step Process Container
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFF8FAFC),
+                    border = BorderStroke(1.dp, CtBorder),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            "HOW IT WORKS (4 STEPS)",
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextMuted,
+                            letterSpacing = 0.5.sp
+                        )
+
+                        PolicyStepItem(
+                            stepNumber = "1",
+                            title = "Share Your Referral Code",
+                            description = "Share code $referralCode with businesses seeking web, mobile app, or software engineering."
+                        )
+
+                        PolicyStepItem(
+                            stepNumber = "2",
+                            title = "Discovery & Scoping",
+                            description = "The client connects with ChittorTech quoting your code. Our tech architects scope their requirements."
+                        )
+
+                        PolicyStepItem(
+                            stepNumber = "3",
+                            title = "SLA & Project Sign-Off",
+                            description = "Once the client executes the agreement and signs the Service Level Agreement (SLA) with ChittorTech."
+                        )
+
+                        PolicyStepItem(
+                            stepNumber = "4",
+                            title = "Direct 5%–10% UPI Payout",
+                            description = "Instant cash commission is credited directly to your registered UPI ID upon milestone kickoff."
+                        )
+                    }
+                }
+
+                // Terms Notice
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color(0xFFEFF6FF),
+                    border = BorderStroke(1.dp, Color(0xFFBFDBFE)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Icon(
+                            Icons.Default.VerifiedUser,
+                            contentDescription = null,
+                            tint = CtPrimaryBlue,
+                            modifier = Modifier.size(16.dp).padding(top = 1.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Commission rates (5%–10%) are calculated on the total project valuation. All payouts are disbursed strictly to your verified registered account.",
+                            fontSize = 11.5.sp,
+                            color = Color(0xFF1E3A8A),
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+
+                // Dedicated Partnership WhatsApp Support Box (Full Width, perfectly styled)
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color(0xFFF0FDF4),
+                    border = BorderStroke(1.dp, Color(0xFFBBF7D0)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable {
+                            val waIntent = Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("https://wa.me/917597451057?text=Hello+ChittorTech+Team,+I+have+a+question+regarding+the+Client+Referral+Program+($referralCode)")
+                            )
+                            context.startActivity(waIntent)
+                        }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFF25D366)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Chat,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Partnership Support Desk",
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF166534)
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "WhatsApp: +91 7597451057",
+                                fontSize = 11.5.sp,
+                                color = Color(0xFF15803D),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = null,
+                            tint = Color(0xFF166534),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = CtPrimaryBlue),
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp)
+            ) {
+                Text("Got It", fontWeight = FontWeight.Bold, fontSize = 13.5.sp)
+            }
+        }
+    )
+}
+
+@Composable
+private fun PolicyStepItem(
+    stepNumber: String,
+    title: String,
+    description: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top
+    ) {
+        Box(
+            modifier = Modifier
+                .size(22.dp)
+                .clip(CircleShape)
+                .background(CtPrimaryBlue),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = stepNumber,
+                color = Color.White,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        Spacer(modifier = Modifier.width(10.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = description,
+                fontSize = 11.5.sp,
+                color = TextSecondary,
+                lineHeight = 15.sp
+            )
+        }
+    }
 }
