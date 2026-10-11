@@ -15,6 +15,11 @@ if (localPropertiesFile.exists()) {
 }
 val groqApiKey: String = localProperties.getProperty("GROQ_API_KEY") ?: ""
 
+val releaseStoreFile: String = localProperties.getProperty("RELEASE_STORE_FILE") ?: ""
+val releaseStorePassword: String = localProperties.getProperty("RELEASE_STORE_PASSWORD") ?: ""
+val releaseKeyAlias: String = localProperties.getProperty("RELEASE_KEY_ALIAS") ?: ""
+val releaseKeyPassword: String = localProperties.getProperty("RELEASE_KEY_PASSWORD") ?: ""
+
 android {
     namespace = "com.chittortech.app"
     compileSdk = 36
@@ -28,9 +33,21 @@ android {
         buildConfigField("String", "GROQ_API_KEY", "\"$groqApiKey\"")
     }
 
+    signingConfigs {
+        create("release") {
+            if (releaseStoreFile.isNotEmpty()) {
+                storeFile = rootProject.file(releaseStoreFile)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
