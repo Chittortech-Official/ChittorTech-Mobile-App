@@ -22,8 +22,8 @@ android {
         applicationId = "com.chittortech.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
-        versionName = "5.0.0"
+        versionCode = 6
+        versionName = "6.0.0"
 
         buildConfigField("String", "GROQ_API_KEY", "\"$groqApiKey\"")
     }
