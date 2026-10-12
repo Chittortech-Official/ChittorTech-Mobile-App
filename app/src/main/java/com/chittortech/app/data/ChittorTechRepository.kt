@@ -92,11 +92,11 @@ class ChittorTechRepository {
     suspend fun validateCredentials(email: String, password: String, expectedRole: String = ""): Result<CtUser> {
         val cleanEmail = email.trim().lowercase()
         val doc = fetchUserDoc(cleanEmail, email.trim())
-            ?: return Result.failure(Exception("Account not found. Please verify your registered email address."))
+            ?: return Result.failure(Exception("Invalid credentials. Please verify your registered email and password."))
 
         val storedPass = doc.getString("Password") ?: doc.getString("password")
         if (storedPass != null && storedPass != password.trim()) {
-            return Result.failure(Exception("Incorrect password. Please verify your credentials."))
+            return Result.failure(Exception("Invalid credentials. Please verify your registered email and password."))
         }
 
         val role = doc.getString("role") ?: doc.getString("Role") ?: "client"
@@ -324,43 +324,44 @@ class ChittorTechRepository {
 
     // ─── Projects ─────────────────────────────────────────────────────────────
 
-    fun observeClientProject(clientId: String, clientEmail: String = ""): Flow<Project?> = callbackFlow {
+    fun observeClientProjects(clientId: String, clientEmail: String = ""): Flow<List<Project>> = callbackFlow {
         val cleanEmail = clientEmail.trim().lowercase()
         val cleanId = clientId.trim()
-        val ids = listOf(cleanEmail, cleanId).filter { it.isNotBlank() }.distinct()
 
-        if (ids.isEmpty()) {
-            trySend(null)
+        if (cleanEmail.isBlank() && cleanId.isBlank()) {
+            trySend(emptyList())
             awaitClose {}
             return@callbackFlow
         }
 
-        val listener = db.collection("projects")
-            .whereIn("clientId", ids)
+        // Direct real-time document listener on client's vault (projects/{cleanEmail})
+        val targetDoc = cleanEmail.ifBlank { cleanId }
+        val listener = db.collection("projects").document(targetDoc)
             .addSnapshotListener { snap, _ ->
-                if (snap != null && !snap.isEmpty) {
-                    trySend(snap.documents.first().toProject())
+                if (snap != null && snap.exists()) {
+                    trySend(snap.toProjectList())
                 } else {
-                    // Fallback to checking document with ID == cleanEmail or cleanId
-                    val docKey = cleanEmail.ifBlank { cleanId }
-                    db.collection("projects").document(docKey).get()
-                        .addOnSuccessListener { doc ->
-                            if (doc != null && doc.exists()) {
-                                trySend(doc.toProject())
-                            } else {
-                                trySend(null)
-                            }
+                    // Fallback query if stored under different document ID
+                    val ids = listOf(cleanEmail, cleanId).filter { it.isNotBlank() }.distinct()
+                    db.collection("projects").whereIn("clientId", ids).get()
+                        .addOnSuccessListener { qSnap ->
+                            val list = qSnap.documents.flatMap { it.toProjectList() }
+                            trySend(list)
                         }
-                        .addOnFailureListener { trySend(null) }
+                        .addOnFailureListener { trySend(emptyList()) }
                 }
             }
         awaitClose { listener.remove() }
     }
 
+    fun observeClientProject(clientId: String, clientEmail: String = ""): Flow<Project?> {
+        return observeClientProjects(clientId, clientEmail).map { it.firstOrNull() }
+    }
+
     fun observeAllProjects(): Flow<List<Project>> = callbackFlow {
         val listener = db.collection("projects")
             .addSnapshotListener { snap, _ ->
-                val list = snap?.documents?.mapNotNull { it.toProject() } ?: emptyList()
+                val list = snap?.documents?.flatMap { it.toProjectList() } ?: emptyList()
                 trySend(list)
             }
         awaitClose { listener.remove() }
@@ -403,41 +404,40 @@ class ChittorTechRepository {
     fun observeClientInvoices(clientId: String, clientEmail: String = ""): Flow<List<Invoice>> = callbackFlow {
         val cleanEmail = clientEmail.trim().lowercase()
         val cleanId = clientId.trim()
-        val ids = listOf(cleanEmail, cleanId).filter { it.isNotBlank() }.distinct()
 
-        if (ids.isEmpty()) {
+        if (cleanEmail.isBlank() && cleanId.isBlank()) {
             trySend(emptyList())
             awaitClose {}
             return@callbackFlow
         }
 
-        val listener = db.collection("invoices")
-            .whereIn("clientId", ids)
+        // Direct real-time document listener on client's invoice vault (invoices/{cleanEmail})
+        val targetDoc = cleanEmail.ifBlank { cleanId }
+        val listener = db.collection("invoices").document(targetDoc)
             .addSnapshotListener { snap, _ ->
-                val list = mutableListOf<Invoice>()
-                if (snap != null && !snap.isEmpty) {
-                    for (doc in snap.documents) {
-                        if (doc.contains("invoices")) {
-                            list.addAll(doc.toInvoiceList())
-                        } else {
-                            list.add(doc.toInvoice())
-                        }
+                if (snap != null && snap.exists()) {
+                    val list = if (snap.contains("invoices") || snap.contains("list")) {
+                        snap.toInvoiceList()
+                    } else {
+                        listOfNotNull(snap.toInvoice())
                     }
-                }
-                // Also check if a document with docKey == cleanEmail exists for legacy nested structure
-                val docKey = cleanEmail.ifBlank { cleanId }
-                if (list.isEmpty()) {
-                    db.collection("invoices").document(docKey).get()
-                        .addOnSuccessListener { legacyDoc ->
-                            if (legacyDoc.exists() && legacyDoc.contains("invoices")) {
-                                trySend(legacyDoc.toInvoiceList().sortedByDescending { it.createdAt?.seconds })
-                            } else {
-                                trySend(emptyList())
+                    trySend(list.sortedByDescending { it.createdAt?.seconds })
+                } else {
+                    // Fallback query if invoices stored in separate documents with clientId
+                    val ids = listOf(cleanEmail, cleanId).filter { it.isNotBlank() }.distinct()
+                    db.collection("invoices").whereIn("clientId", ids).get()
+                        .addOnSuccessListener { qSnap ->
+                            val list = mutableListOf<Invoice>()
+                            for (doc in qSnap.documents) {
+                                if (doc.contains("invoices") || doc.contains("list")) {
+                                    list.addAll(doc.toInvoiceList())
+                                } else {
+                                    list.add(doc.toInvoice())
+                                }
                             }
+                            trySend(list.sortedByDescending { it.createdAt?.seconds })
                         }
                         .addOnFailureListener { trySend(emptyList()) }
-                } else {
-                    trySend(list.sortedByDescending { it.createdAt?.seconds })
                 }
             }
         awaitClose { listener.remove() }
@@ -819,6 +819,10 @@ class ChittorTechRepository {
                         title = doc.getString("title") ?: "",
                         message = doc.getString("message") ?: "",
                         type = doc.getString("type") ?: "INFO",
+                        category = doc.getString("category") ?: "",
+                        targetRole = doc.getString("targetRole") ?: "",
+                        targetEmail = doc.getString("targetEmail") ?: "",
+                        targetClientId = doc.getString("targetClientId") ?: "",
                         timestamp = doc.getTimestamp("timestamp")
                     )
                 } ?: emptyList()
@@ -855,7 +859,114 @@ class ChittorTechRepository {
 
 // ─── Extension Mappers ────────────────────────────────────────────────────────
 
-private fun com.google.firebase.firestore.DocumentSnapshot.toProject(): Project {
+private fun com.google.firebase.firestore.DocumentSnapshot.toProjectList(): List<Project> {
+    val rawList = (get("projects") as? List<*>) ?: (get("list") as? List<*>)
+    if (rawList != null) {
+        val mapList = rawList.filterIsInstance<Map<String, Any>>()
+        val list = mapList.mapNotNull { map ->
+            val projName = (map["name"] as? String)?.ifBlank { null }
+                ?: (map["title"] as? String)?.ifBlank { null }
+                ?: return@mapNotNull null
+
+            val rawProgress = map["milestoneProgress"]
+            val progressInt = when (rawProgress) {
+                is Number -> rawProgress.toInt()
+                is String -> rawProgress.toIntOrNull() ?: 0
+                else -> 0
+            }
+            val rawRenewal = map["annualRenewalFee"]
+            val renewalLong = when (rawRenewal) {
+                is Number -> rawRenewal.toLong()
+                is String -> rawRenewal.toDoubleOrNull()?.toLong() ?: 0L
+                else -> 0L
+            }
+            Project(
+                projectId = map["projectId"] as? String ?: (map["id"] as? String ?: id),
+                clientId = map["clientId"] as? String ?: (getString("clientId") ?: id),
+                name = projName,
+                domain = map["domain"] as? String ?: "",
+                domainRegistrar = map["domainRegistrar"] as? String ?: "",
+                domainRegistrarEmail = map["domainRegistrarEmail"] as? String ?: "",
+                domainRegistrar2FA = map["domainRegistrar2FA"] as? String ?: "",
+                domainExpiryDate = map["domainExpiryDate"] as? String ?: "",
+                hostingProvider = map["hostingProvider"] as? String ?: "",
+                hostingServerIp = map["hostingServerIp"] as? String ?: "",
+                hostingPanelLogin = map["hostingPanelLogin"] as? String ?: "",
+                hostingSpecs = map["hostingSpecs"] as? String ?: "",
+                hostingExpiryDate = map["hostingExpiryDate"] as? String ?: "",
+                sslStatus = map["sslStatus"] as? String ?: "Active",
+                githubRepo = map["githubRepo"] as? String ?: "",
+                buildKickoffDate = map["buildKickoffDate"] as? String ?: "",
+                launchDate = map["launchDate"] as? String ?: "",
+                annualRenewalFee = renewalLong,
+                status = map["status"] as? String ?: "In Progress",
+                currentPhase = map["currentPhase"] as? String ?: "",
+                milestoneProgress = progressInt,
+                sowPdfUrl = map["sowPdfUrl"] as? String ?: ""
+            )
+        }
+        if (list.isNotEmpty()) return list
+    }
+
+    val single = toProject()
+    return if (single != null) listOf(single) else emptyList()
+}
+
+private fun com.google.firebase.firestore.DocumentSnapshot.toProject(): Project? {
+    // 1. Support nested 'projects' or 'list' array structure from Admin Panel website
+    val rawList = (get("projects") as? List<*>) ?: (get("list") as? List<*>)
+    if (rawList != null) {
+        val mapList = rawList.filterIsInstance<Map<String, Any>>()
+        if (mapList.isNotEmpty()) {
+            val map = mapList.first()
+            val rawProgress = map["milestoneProgress"]
+            val progressInt = when (rawProgress) {
+                is Number -> rawProgress.toInt()
+                is String -> rawProgress.toIntOrNull() ?: 0
+                else -> 0
+            }
+            val rawRenewal = map["annualRenewalFee"]
+            val renewalLong = when (rawRenewal) {
+                is Number -> rawRenewal.toLong()
+                is String -> rawRenewal.toDoubleOrNull()?.toLong() ?: 0L
+                else -> 0L
+            }
+            val projName = (map["name"] as? String)?.ifBlank { null }
+                ?: (map["title"] as? String)?.ifBlank { null }
+
+            if (projName != null) {
+                return Project(
+                    projectId = map["projectId"] as? String ?: (map["id"] as? String ?: id),
+                    clientId = map["clientId"] as? String ?: (getString("clientId") ?: id),
+                    name = projName,
+                    domain = map["domain"] as? String ?: "",
+                    domainRegistrar = map["domainRegistrar"] as? String ?: "",
+                    domainRegistrarEmail = map["domainRegistrarEmail"] as? String ?: "",
+                    domainRegistrar2FA = map["domainRegistrar2FA"] as? String ?: "",
+                    domainExpiryDate = map["domainExpiryDate"] as? String ?: "",
+                    hostingProvider = map["hostingProvider"] as? String ?: "",
+                    hostingServerIp = map["hostingServerIp"] as? String ?: "",
+                    hostingPanelLogin = map["hostingPanelLogin"] as? String ?: "",
+                    hostingSpecs = map["hostingSpecs"] as? String ?: "",
+                    hostingExpiryDate = map["hostingExpiryDate"] as? String ?: "",
+                    sslStatus = map["sslStatus"] as? String ?: "Active",
+                    githubRepo = map["githubRepo"] as? String ?: "",
+                    buildKickoffDate = map["buildKickoffDate"] as? String ?: "",
+                    launchDate = map["launchDate"] as? String ?: "",
+                    annualRenewalFee = renewalLong,
+                    status = map["status"] as? String ?: "In Progress",
+                    currentPhase = map["currentPhase"] as? String ?: "",
+                    milestoneProgress = progressInt,
+                    sowPdfUrl = map["sowPdfUrl"] as? String ?: ""
+                )
+            }
+        }
+        return null
+    }
+
+    // 2. Flat document fields
+    val projName = getString("name")?.ifBlank { null } ?: getString("title")?.ifBlank { null } ?: return null
+
     val rawProgress = get("milestoneProgress")
     val progressInt = when (rawProgress) {
         is Number -> rawProgress.toInt()
@@ -871,7 +982,7 @@ private fun com.google.firebase.firestore.DocumentSnapshot.toProject(): Project 
     return Project(
         projectId = id,
         clientId = getString("clientId") ?: "",
-        name = getString("name") ?: getString("title") ?: "",
+        name = projName,
         domain = getString("domain") ?: "",
         domainRegistrar = getString("domainRegistrar") ?: "",
         domainRegistrarEmail = getString("domainRegistrarEmail") ?: "",
@@ -945,9 +1056,9 @@ private fun com.google.firebase.firestore.DocumentSnapshot.toTicket(): SupportTi
 }
 
 private fun com.google.firebase.firestore.DocumentSnapshot.toInvoiceList(): List<Invoice> {
-    @Suppress("UNCHECKED_CAST")
-    val rawList = get("invoices") as? List<Map<String, Any>> ?: emptyList()
-    return rawList.map { map ->
+    val rawList = (get("invoices") as? List<*>) ?: (get("list") as? List<*>) ?: emptyList<Any>()
+    val mapList = rawList.filterIsInstance<Map<String, Any>>()
+    return mapList.mapNotNull { map ->
         val rawItems = map["lineItems"] as? List<Map<String, Any>> ?: emptyList()
         val lineItems = rawItems.map {
             InvoiceLineItem(
@@ -963,12 +1074,15 @@ private fun com.google.firebase.firestore.DocumentSnapshot.toInvoiceList(): List
             } catch (_: Exception) { null }
             else -> null
         }
+        val invId = (map["invoiceId"] as? String)?.ifBlank { null }
+            ?: (map["id"] as? String)?.ifBlank { null }
+            ?: "INV-2026-${(map["amount"] as? Number)?.toInt() ?: 1001}"
         Invoice(
-            invoiceId = map["invoiceId"] as? String ?: "",
-            clientId = id,
+            invoiceId = invId,
+            clientId = map["clientId"] as? String ?: id,
             projectId = map["projectId"] as? String ?: "",
-            projectName = map["projectName"] as? String ?: "",
-            title = map["title"] as? String ?: "",
+            projectName = map["projectName"] as? String ?: (map["project"] as? String ?: ""),
+            title = (map["title"] as? String)?.ifBlank { null } ?: (map["milestoneTitle"] as? String ?: "Milestone Deliverable"),
             lineItems = lineItems,
             amount = (map["amount"] as? Number)?.toLong() ?: 0L,
             status = map["status"] as? String ?: "UNPAID",

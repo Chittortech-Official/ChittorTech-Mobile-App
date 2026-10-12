@@ -152,6 +152,10 @@ data class AppNotification(
     val title: String = "",
     val message: String = "",
     val type: String = "INFO", // "INFO" | "UPDATE" | "ALERT"
+    val category: String = "", // "Billing" | "Project" | "Support" | "General"
+    val targetRole: String = "", // "client" | "admin" | "all"
+    val targetEmail: String = "",
+    val targetClientId: String = "",
     val timestamp: Timestamp? = null
 )
 

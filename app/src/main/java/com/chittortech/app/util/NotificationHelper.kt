@@ -44,12 +44,37 @@ object NotificationHelper {
         }
     }
 
+    private val recentNotificationTimestamps = java.util.concurrent.ConcurrentHashMap<String, Long>()
+
     fun showNotification(
         context: Context,
         title: String,
         message: String,
         notificationId: Int = System.currentTimeMillis().toInt()
     ) {
+        val cleanTitle = title.trim()
+        val cleanMsg = message.trim()
+        val dedupeKey = "$cleanTitle|$cleanMsg"
+        val now = System.currentTimeMillis()
+
+        // Drop duplicate if identical title + message was dispatched within the last 15 seconds
+        val lastSeen = recentNotificationTimestamps[dedupeKey]
+        if (lastSeen != null && (now - lastSeen) < 15_000L) {
+            return
+        }
+        recentNotificationTimestamps[dedupeKey] = now
+
+        // Housekeeping: purge entries older than 60 seconds
+        if (recentNotificationTimestamps.size > 50) {
+            val iterator = recentNotificationTimestamps.entries.iterator()
+            while (iterator.hasNext()) {
+                val entry = iterator.next()
+                if (now - entry.value > 60_000L) {
+                    iterator.remove()
+                }
+            }
+        }
+
         createNotificationChannel(context)
 
         val notificationManager =
@@ -72,7 +97,7 @@ object NotificationHelper {
             .setContentTitle(title)
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setSound(soundUri)
             .setAutoCancel(true)

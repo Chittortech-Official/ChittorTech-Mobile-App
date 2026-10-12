@@ -53,6 +53,11 @@ private val GuestSurface = Color(0xFFECFDF5)
 private val ClientTint   = Color(0xFF0284C7)
 private val ClientSurface= Color(0xFFEFF6FF)
 
+private fun generateCaptchaCode(): String {
+    val allowedChars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
+    return (1..5).map { allowedChars.random() }.joinToString("")
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Main LoginScreen
 // ─────────────────────────────────────────────────────────────────────────────
@@ -79,20 +84,44 @@ fun LoginScreen(
     var otpError by remember { mutableStateOf<String?>(null) }
     var pendingRole by remember { mutableStateOf("client") }
 
+    var userCaptchaInput by remember { mutableStateOf("") }
+    var captchaCode by remember { mutableStateOf(generateCaptchaCode()) }
+
+    val refreshCaptcha = {
+        captchaCode = generateCaptchaCode()
+        userCaptchaInput = ""
+    }
+
     val activeError = localError ?: errorMessage
     val scrollState = rememberScrollState()
 
     // Reset fields on tab change
     LaunchedEffect(selectedTab) {
         email = ""; password = ""; localError = null; otpSession = null; otpError = null
+        refreshCaptcha()
     }
 
     val handleSignInClick = { targetRole: String ->
-        if (email.isNotBlank() && password.isNotBlank()) {
+        if (email.isBlank() || password.isBlank()) {
+            localError = "Please enter both your corporate email and password."
+        } else if (targetRole == "client" && userCaptchaInput.isBlank()) {
+            localError = "Please enter the security captcha code."
+        } else if (targetRole == "client" && !userCaptchaInput.trim().equals(captchaCode, ignoreCase = true)) {
+            localError = "Security captcha mismatch. A new code has been generated."
+            refreshCaptcha()
+        } else {
             localError = null; isSendingOtp = true; pendingRole = targetRole
             onRequestOtp(email.trim(), password.trim(), targetRole,
                 { session -> isSendingOtp = false; otpSession = session; otpError = null },
-                { err  -> isSendingOtp = false; localError = err }
+                { err  ->
+                    isSendingOtp = false
+                    localError = if (err.contains("network", ignoreCase = true) || err.contains("connect", ignoreCase = true)) {
+                        err
+                    } else {
+                        "Invalid credentials. Please verify your registered email and password."
+                    }
+                    refreshCaptcha()
+                }
             )
         }
     }
@@ -148,6 +177,10 @@ fun LoginScreen(
                         email = email, onEmailChange = { email = it },
                         password = password, onPasswordChange = { password = it },
                         passwordVisible = passwordVisible, onToggleVisibility = { passwordVisible = !passwordVisible },
+                        captchaCode = captchaCode,
+                        userCaptchaInput = userCaptchaInput,
+                        onCaptchaInputChange = { userCaptchaInput = it },
+                        onRefreshCaptcha = refreshCaptcha,
                         activeError = activeError, isLoading = isLoading, isSendingOtp = isSendingOtp,
                         onSignIn = { handleSignInClick("client") }
                     )
@@ -439,7 +472,7 @@ private fun GuestCard(onDirectRoleAccess: (role: String, user: CtUser) -> Unit) 
         // Feature grid
         val features = listOf(
             Pair(Icons.Default.Category, "Full Services Catalog"),
-            Pair(Icons.Default.SmartToy, "ChittorTech AI Chatbot"),
+            Pair(Icons.Default.SupportAgent, "Direct Support Desk"),
             Pair(Icons.Default.Forum, "1-Tap WhatsApp Connect"),
             Pair(Icons.Default.RequestQuote, "Free Project Consultation"),
             Pair(Icons.Default.Speed, "Instant Access · No OTP"),
@@ -514,6 +547,10 @@ private fun ClientCard(
     email: String, onEmailChange: (String) -> Unit,
     password: String, onPasswordChange: (String) -> Unit,
     passwordVisible: Boolean, onToggleVisibility: () -> Unit,
+    captchaCode: String,
+    userCaptchaInput: String,
+    onCaptchaInputChange: (String) -> Unit,
+    onRefreshCaptcha: () -> Unit,
     activeError: String?, isLoading: Boolean, isSendingOtp: Boolean,
     onSignIn: () -> Unit
 ) {
@@ -550,10 +587,96 @@ private fun ClientCard(
             onToggleVisibility = onToggleVisibility
         )
 
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // ── Security Captcha Section ─────────────────────────────────────────
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Captcha Display Box (Clean White)
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = Color.White,
+                border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
+                modifier = Modifier
+                    .weight(1.15f)
+                    .height(56.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        captchaCode.forEach { char ->
+                            Text(
+                                text = char.toString(),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0F172A),
+                                letterSpacing = 3.sp,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                            )
+                        }
+                    }
+
+                    IconButton(
+                        onClick = onRefreshCaptcha,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Refresh Captcha",
+                            tint = Color(0xFF64748B),
+                            modifier = Modifier.size(19.dp)
+                        )
+                    }
+                }
+            }
+
+            // Captcha Input Field
+            OutlinedTextField(
+                value = userCaptchaInput,
+                onValueChange = { onCaptchaInputChange(it.uppercase().take(5)) },
+                label = { Text("Captcha", fontSize = 12.sp) },
+                placeholder = { Text("Code", color = Color(0xFFCBD5E1), fontSize = 12.sp) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Ascii,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(onDone = { onSignIn() }),
+                shape = RoundedCornerShape(14.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = ClientTint,
+                    unfocusedBorderColor = Color(0xFFCBD5E1),
+                    focusedLabelColor = ClientTint,
+                    unfocusedLabelColor = Color(0xFF64748B),
+                    cursorColor = ClientTint,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    disabledContainerColor = Color.White
+                ),
+                modifier = Modifier
+                    .weight(0.85f)
+                    .height(56.dp)
+                    .background(Color.White, RoundedCornerShape(14.dp))
+            )
+        }
+
         AnimatedVisibility(visible = activeError != null) {
-            activeError?.let { msg ->
-                Spacer(modifier = Modifier.height(10.dp))
-                ErrorBanner(msg)
+            Column(modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
+                activeError?.let { msg ->
+                    ErrorBanner(msg)
+                }
             }
         }
 
@@ -563,7 +686,7 @@ private fun ClientCard(
             label = if (isLoading || isSendingOtp) "Sending OTP via Titan Mail…" else "Sign In with 2FA OTP",
             icon = Icons.AutoMirrored.Filled.Login,
             gradient = Brush.linearGradient(ClientGrad),
-            enabled = !isLoading && !isSendingOtp && email.isNotBlank() && password.isNotBlank(),
+            enabled = !isLoading && !isSendingOtp && email.isNotBlank() && password.isNotBlank() && userCaptchaInput.isNotBlank(),
             isLoading = isLoading || isSendingOtp,
             onClick = onSignIn
         )
@@ -667,7 +790,9 @@ private fun PremiumTextField(
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
         keyboardActions = keyboardActions,
         singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White, RoundedCornerShape(14.dp)),
         shape = RoundedCornerShape(14.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = accentColor,
@@ -675,8 +800,9 @@ private fun PremiumTextField(
             focusedLabelColor = accentColor,
             unfocusedLabelColor = Color(0xFF64748B),
             cursorColor = accentColor,
-            focusedContainerColor = Color(0xFFFAFCFF),
-            unfocusedContainerColor = Color(0xFFF8FAFC)
+            focusedContainerColor = Color.White,
+            unfocusedContainerColor = Color.White,
+            disabledContainerColor = Color.White
         )
     )
 }
@@ -723,19 +849,20 @@ private fun GradientButton(
 }
 
 @Composable
-private fun ErrorBanner(message: String, isAdmin: Boolean = false) {
+private fun ErrorBanner(message: String, modifier: Modifier = Modifier, isAdmin: Boolean = false) {
     Surface(
         shape = RoundedCornerShape(10.dp),
         color = if (isAdmin) Color(0xFFFFF1F2) else Color(0xFFFEF2F2),
-        border = BorderStroke(1.dp, if (isAdmin) Color(0xFFFCA5A5) else Color(0xFFFECACA))
+        border = BorderStroke(1.dp, if (isAdmin) Color(0xFFFCA5A5) else Color(0xFFFECACA)),
+        modifier = modifier.fillMaxWidth()
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
-            Icon(Icons.Default.ErrorOutline, null, tint = Color(0xFFEF4444), modifier = Modifier.size(15.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(message, fontSize = 12.sp, color = Color(0xFF991B1B), lineHeight = 16.sp)
+            Icon(Icons.Default.ErrorOutline, null, tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(message, fontSize = 12.5.sp, color = Color(0xFF991B1B), lineHeight = 17.sp, fontWeight = FontWeight.Medium)
         }
     }
 }
@@ -756,9 +883,9 @@ private fun SecurityNote(text: String) {
 @Composable
 private fun TrustStrip() {
     val badges = listOf(
-        Triple(Icons.Default.Security, "Firebase Auth", Color(0xFF0284C7)),
-        Triple(Icons.Default.Verified, "DGFT & DPIIT", Color(0xFF10B981)),
-        Triple(Icons.Default.Shield, "256-bit SSL", Color(0xFF8B5CF6))
+        Triple(Icons.Default.Verified, "DGFT IEC", Color(0xFF0284C7)),
+        Triple(Icons.Default.Public, "Singapore GeBIZ", Color(0xFFE11D48)),
+        Triple(Icons.Default.Shield, "256-Bit Secure", Color(0xFF10B981))
     )
 
     Surface(
@@ -776,7 +903,10 @@ private fun TrustStrip() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             badges.forEachIndexed { i, (icon, label, color) ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.weight(1f)
+                ) {
                     Box(
                         modifier = Modifier
                             .size(36.dp)
@@ -787,7 +917,14 @@ private fun TrustStrip() {
                         Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
                     }
                     Spacer(modifier = Modifier.height(5.dp))
-                    Text(label, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF475569))
+                    Text(
+                        label,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF334155),
+                        textAlign = TextAlign.Center,
+                        maxLines = 1
+                    )
                 }
                 if (i < badges.size - 1) {
                     Box(Modifier.width(1.dp).height(32.dp).background(Color(0xFFE2E8F0)))
@@ -935,9 +1072,10 @@ private fun OtpVerificationDialog(
                     )
 
                     AnimatedVisibility(visible = errorMessage != null) {
-                        errorMessage?.let { err ->
-                            Spacer(modifier = Modifier.height(10.dp))
-                            ErrorBanner(err)
+                        Column(modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
+                            errorMessage?.let { err ->
+                                ErrorBanner(err)
+                            }
                         }
                     }
 

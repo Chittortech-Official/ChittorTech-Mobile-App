@@ -23,7 +23,8 @@ import com.chittortech.app.ui.components.*
 @Composable
 fun ClientDashboardScreen(
     user: CtUser,
-    project: Project?,
+    project: Project? = null,
+    projects: List<Project> = listOfNotNull(project),
     invoices: List<Invoice>,
     tickets: List<SupportTicket>,
     onViewInvoices: () -> Unit,
@@ -31,6 +32,7 @@ fun ClientDashboardScreen(
     onContactEngineer: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val activeProjects = if (projects.isNotEmpty()) projects else listOfNotNull(project)
     val pendingCount = invoices.count { it.status != "PAID" }
     val openTickets  = tickets.count { it.status == "OPEN" }
 
@@ -122,72 +124,79 @@ fun ClientDashboardScreen(
             }
         }
 
-        // ── Active Project Card ───────────────────────────────────────────────
+        // ── Active Projects Section ───────────────────────────────────────────
         item {
             Spacer(modifier = Modifier.height(4.dp))
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                SectionHeader(title = "🚀 Active Project")
+                val headerTitle = if (activeProjects.size > 1) "🚀 Active Projects (${activeProjects.size})" else "🚀 Active Project"
+                SectionHeader(title = headerTitle)
                 Spacer(modifier = Modifier.height(10.dp))
-                if (project != null) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = CtCardWhite),
-                        elevation = CardDefaults.cardElevation(2.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        project.name,
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = TextPrimary
-                                    )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        project.domain,
-                                        fontSize = 12.sp,
-                                        color = CtPrimaryBlue
-                                    )
+
+                if (activeProjects.isNotEmpty()) {
+                    activeProjects.forEachIndexed { index, proj ->
+                        if (index > 0) Spacer(modifier = Modifier.height(12.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = CtCardWhite),
+                            elevation = CardDefaults.cardElevation(2.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            proj.name,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = TextPrimary
+                                        )
+                                        if (proj.domain.isNotBlank()) {
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            Text(
+                                                proj.domain,
+                                                fontSize = 12.sp,
+                                                color = CtPrimaryBlue
+                                            )
+                                        }
+                                    }
+                                    StatusBadge(status = proj.status)
                                 }
-                                StatusBadge(status = project.status)
-                            }
 
-                            Spacer(modifier = Modifier.height(14.dp))
+                                Spacer(modifier = Modifier.height(14.dp))
 
-                            // Current Phase
-                            if (project.currentPhase.isNotBlank()) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = CtGreen, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "Current Phase: ${project.currentPhase}",
-                                        fontSize = 12.sp,
-                                        color = TextSecondary
-                                    )
+                                // Current Phase
+                                if (proj.currentPhase.isNotBlank()) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.PlayArrow, contentDescription = null, tint = CtGreen, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "Current Phase: ${proj.currentPhase}",
+                                            fontSize = 12.sp,
+                                            color = TextSecondary
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(10.dp))
                                 }
-                                Spacer(modifier = Modifier.height(10.dp))
-                            }
 
-                            // Milestone Progress Bar
-                            Text("Milestone Progress", fontSize = 12.sp, color = TextSecondary)
-                            Spacer(modifier = Modifier.height(6.dp))
-                            LinearProgressIndicator(
-                                progress = { project.milestoneProgress / 100f },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(8.dp)
-                                    .clip(RoundedCornerShape(4.dp)),
-                                color = CtPrimaryBlue,
-                                trackColor = CtPrimaryLight
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text("${project.milestoneProgress}% Complete", fontSize = 11.sp, color = TextMuted)
+                                // Milestone Progress Bar
+                                Text("Milestone Progress", fontSize = 12.sp, color = TextSecondary)
+                                Spacer(modifier = Modifier.height(6.dp))
+                                LinearProgressIndicator(
+                                    progress = { proj.milestoneProgress / 100f },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(8.dp)
+                                        .clip(RoundedCornerShape(4.dp)),
+                                    color = CtPrimaryBlue,
+                                    trackColor = CtPrimaryLight
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("${proj.milestoneProgress}% Complete", fontSize = 11.sp, color = TextMuted)
+                            }
                         }
                     }
                 } else {
@@ -284,13 +293,17 @@ fun ClientDashboardScreen(
         }
 
         // ── Infrastructure & Renewal Info ────────────────────────────────────
-        if (project != null && (project.domain.isNotBlank() || project.domainExpiryDate.isNotBlank())) {
+        val infraProjects = activeProjects.filter { it.domain.isNotBlank() || it.domainExpiryDate.isNotBlank() || it.hostingProvider.isNotBlank() }
+        if (infraProjects.isNotEmpty()) {
             item {
                 Spacer(modifier = Modifier.height(20.dp))
                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                     SectionHeader(title = "🔒 Infrastructure Status")
                     Spacer(modifier = Modifier.height(10.dp))
-                    InfraStatusCard(project = project)
+                    infraProjects.forEachIndexed { idx, p ->
+                        if (idx > 0) Spacer(modifier = Modifier.height(12.dp))
+                        InfraStatusCard(project = p)
+                    }
                 }
             }
         }
