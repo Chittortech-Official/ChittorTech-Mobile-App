@@ -32,12 +32,17 @@ object SessionManager {
      */
     fun saveSession(context: Context, email: String, role: String = "client") {
         val now = System.currentTimeMillis()
+        val cleanEmail = email.trim().lowercase()
+        val cleanRole = role.trim().lowercase()
         getPrefs(context).edit()
             .putLong(KEY_LOGIN_TIMESTAMP, now)
             .putLong(KEY_LAST_ACTIVE_TIMESTAMP, now)
-            .putString(KEY_CLIENT_EMAIL, email.trim().lowercase())
-            .putString(KEY_CLIENT_ROLE, role.trim().lowercase())
+            .putString(KEY_CLIENT_EMAIL, cleanEmail)
+            .putString(KEY_CLIENT_ROLE, cleanRole)
             .apply()
+
+        // Automatically subscribe device to FCM push topics for real-time alerts
+        FcmNotificationManager.subscribeToUserTopics(cleanEmail, cleanRole)
     }
 
     /**
@@ -50,6 +55,13 @@ object SessionManager {
                 .putLong(KEY_LAST_ACTIVE_TIMESTAMP, System.currentTimeMillis())
                 .apply()
         }
+    }
+
+    /**
+     * Returns the currently stored client email, if any.
+     */
+    fun getStoredEmail(context: Context): String? {
+        return getPrefs(context).getString(KEY_CLIENT_EMAIL, null)
     }
 
     /**
@@ -95,6 +107,10 @@ object SessionManager {
      * Clears all session data upon logout or session expiry.
      */
     fun clearSession(context: Context) {
+        val email = getStoredEmail(context)
+        if (!email.isNullOrBlank()) {
+            FcmNotificationManager.unsubscribeFromUserTopics(email)
+        }
         getPrefs(context).edit().clear().apply()
     }
 }

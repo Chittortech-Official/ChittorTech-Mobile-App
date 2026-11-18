@@ -166,4 +166,63 @@ object OtpAuthService {
             Result.failure(e)
         }
     }
+
+    /**
+     * Dispatches an instant high-priority email alert to Kush Sharma and Lav Sharma
+     * whenever a client creates/raises a support ticket.
+     */
+    suspend fun notifyTicketCreated(
+        ticketId: String,
+        clientId: String,
+        clientName: String,
+        companyName: String,
+        title: String,
+        description: String,
+        category: String,
+        priority: String,
+        phone: String = ""
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val endpoints = listOf(
+                "https://chittortech.in/api/tickets/notify-admin",
+                "$vercelBaseUrl/api/tickets/notify-admin"
+            )
+            val jsonBody = JSONObject().apply {
+                put("ticketId", ticketId)
+                put("clientId", clientId)
+                put("clientName", clientName)
+                put("companyName", companyName)
+                put("title", title)
+                put("description", description)
+                put("category", category)
+                put("priority", priority)
+                put("phone", phone)
+            }
+            for (endpoint in endpoints) {
+                try {
+                    val url = URL(endpoint)
+                    val connection = (url.openConnection() as HttpURLConnection).apply {
+                        requestMethod = "POST"
+                        setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+                        setRequestProperty("Accept", "application/json")
+                        connectTimeout = 6000
+                        readTimeout = 6000
+                        doOutput = true
+                    }
+                    OutputStreamWriter(connection.outputStream, "UTF-8").use { writer ->
+                        writer.write(jsonBody.toString())
+                        writer.flush()
+                    }
+                    val code = connection.responseCode
+                    if (code in 200..299) {
+                        return@withContext Result.success(Unit)
+                    }
+                } catch (_: Exception) {}
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
+

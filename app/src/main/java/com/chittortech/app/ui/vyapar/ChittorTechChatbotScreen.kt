@@ -37,9 +37,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chittortech.app.R
-import com.chittortech.app.data.ChatMessage
-import com.chittortech.app.data.GroqChatService
-import com.chittortech.app.data.MessageSender
+import com.chittortech.app.data.ChittorTechKnowledgeBase
+import com.chittortech.app.model.ChatMessage
+import com.chittortech.app.model.MessageSender
 import com.chittortech.app.theme.*
 import kotlinx.coroutines.launch
 
@@ -51,7 +51,6 @@ fun ChittorTechChatbotScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val clipboardManager = LocalClipboardManager.current
-    val groqService = remember { GroqChatService(context) }
 
     val listState = rememberLazyListState()
 
@@ -92,14 +91,8 @@ fun ChittorTechChatbotScreen(
         scope.launch {
             listState.animateScrollToItem(messages.size)
 
-            val userName = context.getSharedPreferences("chittortech_user_prefs", Context.MODE_PRIVATE)
-                .getString("user_name", "Guest").orEmpty().ifBlank { "Guest" }
-            val botResponseText = groqService.sendMessage(
-                userMessage = trimmed,
-                history = messages,
-                currentScreen = currentScreen,
-                userName = userName
-            )
+            kotlinx.coroutines.delay(250) // Micro conversational response pacing
+            val botResponseText = ChittorTechKnowledgeBase.getLocalFallbackResponse(trimmed)
             val botMsg = ChatMessage(sender = MessageSender.BOT, text = botResponseText)
             messages = messages + botMsg
             isTyping = false
@@ -229,7 +222,7 @@ fun ChittorTechChatbotScreen(
                             color = Color(0xFF0F172A)
                         )
                         Text(
-                            text = "Online · Groq LPU Powered",
+                            text = "Online · ChittorTech AI Assistant",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color(0xFF10B981)

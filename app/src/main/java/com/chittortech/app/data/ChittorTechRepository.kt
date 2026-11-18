@@ -113,38 +113,14 @@ class ChittorTechRepository {
             }
         }
 
-        val user = CtUser(
-            uid = doc.id,
-            email = doc.getString("Email") ?: doc.getString("email") ?: cleanEmail,
-            displayName = doc.getString("Name")
-                ?: doc.getString("name")
-                ?: doc.getString("displayName")
-                ?: cleanEmail.substringBefore("@"),
-            companyName = doc.getString("companyName") ?: "",
-            role = role,
-            phone = doc.getString("phone") ?: ""
-        )
+        val user = doc.toCtUser(defaultEmail = cleanEmail)
         return Result.success(user)
     }
 
     suspend fun getUserByEmail(email: String): CtUser? {
         val cleanEmail = email.trim().lowercase()
         val doc = fetchUserDoc(cleanEmail, email.trim()) ?: return null
-        return CtUser(
-            uid = doc.id,
-            email = doc.getString("Email") ?: doc.getString("email") ?: email,
-            displayName = doc.getString("Name")
-                ?: doc.getString("name")
-                ?: doc.getString("displayName")
-                ?: doc.getString("fullName")
-                ?: email.substringBefore("@"),
-            companyName = doc.getString("companyName")
-                ?: doc.getString("company")
-                ?: doc.getString("businessName")
-                ?: "",
-            role = doc.getString("role") ?: doc.getString("Role") ?: "client",
-            phone = doc.getString("phone") ?: doc.getString("phoneNumber") ?: ""
-        )
+        return doc.toCtUser(defaultEmail = cleanEmail)
     }
 
     suspend fun updateUserProfile(user: CtUser): Result<Unit> {
@@ -153,12 +129,13 @@ class ChittorTechRepository {
             val docKey = cleanEmail.ifBlank { user.uid }
             val updates = hashMapOf<String, Any>(
                 "Name" to user.displayName,
+                "name" to user.displayName,
+                "displayName" to user.displayName,
                 "phone" to user.phone,
-                "updatedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp(),
-                // Automatically clean up duplicate lowercase/camelCase keys from Firestore
-                "name" to com.google.firebase.firestore.FieldValue.delete(),
-                "displayName" to com.google.firebase.firestore.FieldValue.delete(),
-                "phoneNumber" to com.google.firebase.firestore.FieldValue.delete()
+                "phoneNumber" to user.phone,
+                "companyName" to user.companyName,
+                "company" to user.companyName,
+                "updatedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
             )
             val docRef = db.collection("users").document(docKey)
             docRef.set(updates, com.google.firebase.firestore.SetOptions.merge()).await()
@@ -252,30 +229,22 @@ class ChittorTechRepository {
         val authUser = auth.currentUser
         val uid = authUser?.uid ?: currentUid
         val email = authUser?.email ?: ""
+        val cleanEmail = email.trim().lowercase()
         return try {
-            val doc = fetchUserDoc(email.trim().lowercase(), email.trim(), uid ?: "")
+            val doc = fetchUserDoc(cleanEmail, email.trim(), uid ?: "")
             if (doc != null && doc.exists()) {
-                CtUser(
-                    uid = uid ?: doc.id,
-                    email = doc.getString("Email") ?: doc.getString("email") ?: email,
-                    displayName = doc.getString("Name")
-                        ?: doc.getString("name")
-                        ?: doc.getString("displayName")
-                        ?: doc.getString("fullName")
-                        ?: authUser?.displayName
-                        ?: email.substringBefore("@"),
-                    companyName = doc.getString("companyName")
-                        ?: doc.getString("company")
-                        ?: doc.getString("businessName")
-                        ?: "",
-                    role = doc.getString("role") ?: doc.getString("Role") ?: "client",
-                    phone = doc.getString("phone")
-                        ?: doc.getString("phoneNumber")
-                        ?: doc.getString("mobile")
-                        ?: authUser?.phoneNumber
-                        ?: "",
-                    createdAt = doc.getTimestamp("createdAt")
-                )
+                doc.toCtUser(defaultUid = uid ?: doc.id, defaultEmail = cleanEmail)
+            } else if (cleanEmail.isNotBlank()) {
+                getUserByEmail(cleanEmail) ?: if (authUser != null) {
+                    CtUser(
+                        uid = authUser.uid,
+                        email = cleanEmail,
+                        displayName = authUser.displayName?.ifBlank { null } ?: cleanEmail.substringBefore("@"),
+                        companyName = "",
+                        role = "client",
+                        phone = authUser.phoneNumber ?: ""
+                    )
+                } else null
             } else if (authUser != null) {
                 CtUser(
                     uid = authUser.uid,
@@ -287,7 +256,9 @@ class ChittorTechRepository {
                 )
             } else null
         } catch (e: Exception) {
-            if (authUser != null) {
+            if (cleanEmail.isNotBlank()) {
+                getUserByEmail(cleanEmail)
+            } else if (authUser != null) {
                 CtUser(
                     uid = authUser.uid,
                     email = authUser.email ?: "",
@@ -298,6 +269,38 @@ class ChittorTechRepository {
                 )
             } else null
         }
+    }
+
+    /**
+     * Real-time listener on the user's document in Firestore (`users/{cleanEmail}`).
+     * Automatically syncs company name, phone, displayName, and profile updates across devices.
+     */
+    fun observeUser(emailOrUid: String): Flow<CtUser?> = callbackFlow {
+        val cleanKey = emailOrUid.trim().lowercase()
+        if (cleanKey.isBlank()) {
+            trySend(null)
+            awaitClose {}
+            return@callbackFlow
+        }
+
+        val docRef = db.collection("users").document(cleanKey)
+        val listener = docRef.addSnapshotListener { snap, err ->
+            if (err != null) {
+                return@addSnapshotListener
+            }
+            if (snap != null && snap.exists()) {
+                trySend(snap.toCtUser(defaultEmail = cleanKey))
+            } else if (cleanKey.contains("@")) {
+                db.collection("users").whereEqualTo("Email", cleanKey).limit(1).get()
+                    .addOnSuccessListener { qSnap ->
+                        val found = qSnap.documents.firstOrNull()
+                        if (found != null && found.exists()) {
+                            trySend(found.toCtUser(defaultEmail = cleanKey))
+                        }
+                    }
+            }
+        }
+        awaitClose { listener.remove() }
     }
 
     private suspend fun fetchUserDoc(vararg keys: String): com.google.firebase.firestore.DocumentSnapshot? {
@@ -390,7 +393,10 @@ class ChittorTechRepository {
                 "annualRenewalFee" to project.annualRenewalFee,
                 "status" to project.status,
                 "currentPhase" to project.currentPhase,
-                "milestoneProgress" to project.milestoneProgress
+                "milestoneProgress" to project.milestoneProgress,
+                "type" to project.type,
+                "platform" to project.platform,
+                "targetKeywords" to project.targetKeywords
             )
             db.collection("projects").document(docKey).set(data).await()
             Result.success(Unit)
@@ -467,7 +473,11 @@ class ChittorTechRepository {
                 "lineItems" to invoice.lineItems.map { mapOf("description" to it.description, "amount" to it.amount) },
                 "invoicePdfUrl" to invoice.invoicePdfUrl,
                 "signedSowUrl" to (invoice.signedSowUrl ?: ""),
-                "createdAt" to Timestamp.now()
+                "createdAt" to Timestamp.now(),
+                "invoiceDate" to invoice.invoiceDate,
+                "paymentMode" to invoice.paymentMode,
+                "paymentInfo" to invoice.paymentInfo,
+                "termsText" to invoice.termsText
             )
             val docRef = db.collection("invoices").document(docKey)
             val docSnap = docRef.get().await()
@@ -641,6 +651,21 @@ class ChittorTechRepository {
             } else {
                 docRef.set(mapOf("clientId" to docKey, "tickets" to listOf(ticketMap))).await()
             }
+
+            // Immediately dispatch instant high-priority email alert to Kush Sharma and Lav Sharma
+            try {
+                OtpAuthService.notifyTicketCreated(
+                    ticketId = tktId,
+                    clientId = docKey,
+                    clientName = ticket.clientName,
+                    companyName = ticket.companyName,
+                    title = ticket.title,
+                    description = ticket.description,
+                    category = ticket.category,
+                    priority = ticket.priority
+                )
+            } catch (_: Exception) {}
+
             Result.success(tktId)
         } catch (e: Exception) {
             Result.failure(e)
@@ -718,22 +743,7 @@ class ChittorTechRepository {
                     if (role.equals("admin", ignoreCase = true) || adminEmails.contains(email.lowercase())) {
                         null
                     } else {
-                        CtUser(
-                            uid = doc.id,
-                            email = email,
-                            displayName = doc.getString("Name")
-                                ?: doc.getString("name")
-                                ?: doc.getString("displayName")
-                                ?: doc.getString("fullName")
-                                ?: email.substringBefore("@"),
-                            companyName = doc.getString("companyName")
-                                ?: doc.getString("company")
-                                ?: doc.getString("businessName")
-                                ?: "",
-                            role = "client",
-                            phone = doc.getString("phone") ?: doc.getString("phoneNumber") ?: "",
-                            createdAt = doc.getTimestamp("createdAt")
-                        )
+                        doc.toCtUser(defaultEmail = email)
                     }
                 } ?: emptyList()
                 trySend(list)
@@ -805,41 +815,77 @@ class ChittorTechRepository {
 
     // ─── Broadcast Notifications ──────────────────────────────────────────────
 
-    fun observeNotifications(): Flow<List<AppNotification>> = callbackFlow {
+    fun observeNotifications(clientEmail: String = ""): Flow<List<AppNotification>> = callbackFlow {
+        val cleanEmail = clientEmail.trim().lowercase()
         val listener = db.collection("notifications")
-            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
             .addSnapshotListener { snap, error ->
                 if (error != null) {
                     trySend(emptyList())
                     return@addSnapshotListener
                 }
-                val list = snap?.documents?.mapNotNull { doc ->
-                    AppNotification(
-                        id = doc.id,
-                        title = doc.getString("title") ?: "",
-                        message = doc.getString("message") ?: "",
-                        type = doc.getString("type") ?: "INFO",
-                        category = doc.getString("category") ?: "",
-                        targetRole = doc.getString("targetRole") ?: "",
-                        targetEmail = doc.getString("targetEmail") ?: "",
-                        targetClientId = doc.getString("targetClientId") ?: "",
-                        timestamp = doc.getTimestamp("timestamp")
-                    )
-                } ?: emptyList()
+                val list = mutableListOf<AppNotification>()
+                snap?.documents?.forEach { doc ->
+                    val docId = doc.id.trim().lowercase()
+                    val hasArray = doc.contains("notifications") || doc.contains("list")
+                    if (hasArray) {
+                        // Single-document per user or to_all_users
+                        if (docId == "to_all_users" || cleanEmail.isBlank() || docId == cleanEmail) {
+                            list.addAll(doc.toNotificationList())
+                        }
+                    } else if (doc.contains("title") || doc.contains("message")) {
+                        // Legacy loose document fallback
+                        val targetEmail = (doc.getString("targetEmail") ?: "").trim().lowercase()
+                        val targetClient = (doc.getString("targetClientId") ?: "").trim().lowercase()
+                        if (cleanEmail.isBlank() || targetEmail.isBlank() || targetEmail == cleanEmail || targetClient == cleanEmail) {
+                            list.add(
+                                AppNotification(
+                                    id = doc.id,
+                                    title = doc.getString("title") ?: "",
+                                    message = doc.getString("message") ?: "",
+                                    type = doc.getString("type") ?: "INFO",
+                                    category = doc.getString("category") ?: "",
+                                    targetRole = doc.getString("targetRole") ?: "",
+                                    targetEmail = targetEmail,
+                                    targetClientId = targetClient,
+                                    timestamp = doc.getTimestamp("timestamp")
+                                )
+                            )
+                        }
+                    }
+                }
+                // Sort latest first
+                list.sortByDescending { it.timestamp?.seconds ?: 0L }
                 trySend(list)
             }
         awaitClose { listener.remove() }
     }
 
-    suspend fun sendNotification(title: String, message: String, type: String = "INFO"): Result<Unit> {
+    suspend fun sendNotification(title: String, message: String, type: String = "INFO", targetClientId: String = ""): Result<Unit> {
         return try {
+            val cleanTarget = targetClientId.trim().lowercase()
+            val docKey = if (cleanTarget.isNotBlank() && cleanTarget != "all") cleanTarget else "to_all_users"
+            val notifId = "notif_" + System.currentTimeMillis()
             val data = hashMapOf(
+                "id" to notifId,
                 "title" to title.trim(),
                 "message" to message.trim(),
                 "type" to type,
+                "target" to if (docKey == "to_all_users") "ALL" else "SPECIFIC_CLIENT",
+                "targetClientId" to if (docKey == "to_all_users") null else docKey,
                 "timestamp" to Timestamp.now()
             )
-            db.collection("notifications").add(data).await()
+            val docRef = db.collection("notifications").document(docKey)
+            val docSnap = docRef.get().await()
+            if (docSnap.exists() && docSnap.contains("notifications")) {
+                docRef.update("notifications", com.google.firebase.firestore.FieldValue.arrayUnion(data)).await()
+            } else {
+                val initialMap = hashMapOf(
+                    "clientId" to docKey,
+                    "notifications" to listOf(data),
+                    "updatedAt" to Timestamp.now()
+                )
+                docRef.set(initialMap, com.google.firebase.firestore.SetOptions.merge()).await()
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -902,7 +948,10 @@ private fun com.google.firebase.firestore.DocumentSnapshot.toProjectList(): List
                 status = map["status"] as? String ?: "In Progress",
                 currentPhase = map["currentPhase"] as? String ?: "",
                 milestoneProgress = progressInt,
-                sowPdfUrl = map["sowPdfUrl"] as? String ?: ""
+                sowPdfUrl = map["sowPdfUrl"] as? String ?: "",
+                type = (map["type"] as? String)?.ifBlank { null } ?: (map["category"] as? String) ?: (map["service"] as? String) ?: "",
+                platform = map["platform"] as? String ?: "",
+                targetKeywords = map["targetKeywords"] as? String ?: ""
             )
         }
         if (list.isNotEmpty()) return list
@@ -957,7 +1006,10 @@ private fun com.google.firebase.firestore.DocumentSnapshot.toProject(): Project?
                     status = map["status"] as? String ?: "In Progress",
                     currentPhase = map["currentPhase"] as? String ?: "",
                     milestoneProgress = progressInt,
-                    sowPdfUrl = map["sowPdfUrl"] as? String ?: ""
+                    sowPdfUrl = map["sowPdfUrl"] as? String ?: "",
+                    type = (map["type"] as? String)?.ifBlank { null } ?: (map["category"] as? String) ?: (map["service"] as? String) ?: "",
+                    platform = map["platform"] as? String ?: "",
+                    targetKeywords = map["targetKeywords"] as? String ?: ""
                 )
             }
         }
@@ -1001,7 +1053,10 @@ private fun com.google.firebase.firestore.DocumentSnapshot.toProject(): Project?
         status = getString("status") ?: "In Progress",
         currentPhase = getString("currentPhase") ?: "",
         milestoneProgress = progressInt,
-        sowPdfUrl = getString("sowPdfUrl") ?: ""
+        sowPdfUrl = getString("sowPdfUrl") ?: "",
+        type = getString("type")?.ifBlank { null } ?: getString("category")?.ifBlank { null } ?: getString("service") ?: "",
+        platform = getString("platform") ?: "",
+        targetKeywords = getString("targetKeywords") ?: ""
     )
 }
 
@@ -1032,7 +1087,11 @@ private fun com.google.firebase.firestore.DocumentSnapshot.toInvoice(): Invoice 
         dueDate = getString("dueDate") ?: "",
         invoicePdfUrl = getString("invoicePdfUrl") ?: "",
         signedSowUrl = getString("signedSowUrl"),
-        createdAt = getTimestamp("createdAt")
+        createdAt = getSafeTimestamp("createdAt"),
+        invoiceDate = getString("invoiceDate") ?: "",
+        paymentMode = getString("paymentMode") ?: "Bank Transfer",
+        paymentInfo = getString("paymentInfo") ?: "",
+        termsText = getString("termsText") ?: ""
     )
 }
 
@@ -1050,8 +1109,8 @@ private fun com.google.firebase.firestore.DocumentSnapshot.toTicket(): SupportTi
         description = getString("description") ?: "",
         resolutionNote = getString("resolutionNote") ?: "",
         attachmentUrl = getString("attachmentUrl") ?: "",
-        createdAt = getTimestamp("createdAt"),
-        updatedAt = getTimestamp("updatedAt")
+        createdAt = getSafeTimestamp("createdAt"),
+        updatedAt = getSafeTimestamp("updatedAt")
     )
 }
 
@@ -1089,7 +1148,11 @@ private fun com.google.firebase.firestore.DocumentSnapshot.toInvoiceList(): List
             dueDate = map["dueDate"] as? String ?: "",
             invoicePdfUrl = map["invoicePdfUrl"] as? String ?: "",
             signedSowUrl = map["signedSowUrl"] as? String,
-            createdAt = timestamp
+            createdAt = timestamp,
+            invoiceDate = map["invoiceDate"] as? String ?: "",
+            paymentMode = map["paymentMode"] as? String ?: "Bank Transfer",
+            paymentInfo = map["paymentInfo"] as? String ?: "",
+            termsText = map["termsText"] as? String ?: ""
         )
     }
 }
@@ -1123,3 +1186,104 @@ private fun com.google.firebase.firestore.DocumentSnapshot.toTicketList(): List<
         )
     }
 }
+
+private fun com.google.firebase.firestore.DocumentSnapshot.toNotificationList(): List<AppNotification> {
+    @Suppress("UNCHECKED_CAST")
+    val rawList = (get("notifications") as? List<Map<String, Any>>)
+        ?: (get("list") as? List<Map<String, Any>>)
+        ?: emptyList()
+    return rawList.map { map ->
+        val ts = map["timestamp"] ?: map["createdAt"]
+        val timestamp = when (ts) {
+            is Timestamp -> ts
+            is String -> try {
+                Timestamp(java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).parse(ts) ?: java.util.Date())
+            } catch (_: Exception) { null }
+            else -> null
+        }
+        AppNotification(
+            id = map["id"] as? String ?: "",
+            title = map["title"] as? String ?: "",
+            message = map["message"] as? String ?: "",
+            type = map["type"] as? String ?: "INFO",
+            category = map["category"] as? String ?: "General",
+            targetRole = map["targetRole"] as? String ?: "",
+            targetEmail = map["targetEmail"] as? String ?: "",
+            targetClientId = map["targetClientId"] as? String ?: id,
+            timestamp = timestamp
+        )
+    }
+}
+
+/**
+ * Safely extracts a Firestore [Timestamp] from either a native Firestore Timestamp,
+ * an ISO-8601 String (e.g. from web APIs: "2026-10-12T13:46:19.810Z"), or numeric epoch timestamp.
+ * Avoids IllegalArgumentException / RuntimeException when schema formats vary across web and mobile.
+ */
+fun com.google.firebase.firestore.DocumentSnapshot.getSafeTimestamp(field: String): Timestamp? {
+    return try {
+        getTimestamp(field)
+    } catch (_: Exception) {
+        try {
+            val raw = get(field)
+            when (raw) {
+                is Timestamp -> raw
+                is String -> {
+                    try {
+                        val instant = java.time.Instant.parse(raw)
+                        Timestamp(instant.epochSecond, instant.nano)
+                    } catch (_: Exception) {
+                        try {
+                            val parsed = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).parse(raw)
+                            if (parsed != null) Timestamp(parsed) else null
+                        } catch (_: Exception) { null }
+                    }
+                }
+                is Number -> Timestamp(raw.toLong() / 1000, 0)
+                else -> null
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+}
+
+/**
+ * Robust mapper to construct [CtUser] from a Firestore DocumentSnapshot.
+ * Resolves case differences (Name/name/displayName), company aliases (companyName/company/businessName/Company),
+ * phone aliases (phone/phoneNumber/mobile/Phone), and parses timestamps safely without throwing.
+ */
+fun com.google.firebase.firestore.DocumentSnapshot.toCtUser(defaultUid: String? = null, defaultEmail: String? = null): CtUser {
+    val cleanEmail = getString("Email")
+        ?: getString("email")
+        ?: defaultEmail
+        ?: id
+    val cleanDisplayName = getString("Name")
+        ?: getString("name")
+        ?: getString("displayName")
+        ?: getString("fullName")
+        ?: cleanEmail.substringBefore("@")
+    val cleanCompanyName = getString("companyName")
+        ?: getString("company")
+        ?: getString("businessName")
+        ?: getString("Company")
+        ?: ""
+    val cleanPhone = getString("phone")
+        ?: getString("phoneNumber")
+        ?: getString("mobile")
+        ?: getString("Phone")
+        ?: ""
+    val cleanRole = getString("role") ?: getString("Role") ?: "client"
+    val safeCreatedAt = getSafeTimestamp("createdAt")
+
+    return CtUser(
+        uid = defaultUid ?: id,
+        email = cleanEmail,
+        displayName = cleanDisplayName,
+        companyName = cleanCompanyName,
+        role = cleanRole,
+        phone = cleanPhone,
+        createdAt = safeCreatedAt
+    )
+}
+

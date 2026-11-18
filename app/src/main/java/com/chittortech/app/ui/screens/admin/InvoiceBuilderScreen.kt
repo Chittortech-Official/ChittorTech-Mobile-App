@@ -359,8 +359,9 @@ private fun AdminInvoiceCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val dueFormatted = formatDateDDMMYYYY(invoice.dueDate)
                 Text(
-                    text = "Due: ${invoice.dueDate.ifBlank { "Immediate" }}",
+                    text = "Due: ${dueFormatted.ifBlank { invoice.dueDate.ifBlank { "Immediate" } }}",
                     fontSize = 11.5.sp,
                     color = TextMuted,
                     fontWeight = FontWeight.Medium
@@ -433,7 +434,7 @@ private fun shareInvoiceToClient(
         🏢 Client: $clientName
         📌 Title: ${invoice.title}
         💰 Total Amount: ₹${invoice.amount.fmtAmount()}
-        📅 Due Date: ${invoice.dueDate.ifBlank { "Immediate" }}
+        📅 Due Date: ${formatDateDDMMYYYY(invoice.dueDate).ifBlank { invoice.dueDate.ifBlank { "Immediate" } }}
         Status: ${invoice.status}
         
         *Line Items:*
@@ -566,7 +567,7 @@ private fun CreateInvoiceDialog(
                     OutlinedTextField(
                         value = dueDate,
                         onValueChange = { dueDate = it },
-                        label = { Text("Due Date (e.g. 15 Oct 2026)") },
+                        label = { Text("Due Date (e.g. 25-10-2026)") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )

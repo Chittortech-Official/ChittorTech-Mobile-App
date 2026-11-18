@@ -90,7 +90,7 @@ fun VyaparHomeScreen(
             TechStackItem("Compose", "Material 3 UI", Icons.Outlined.Widgets, Color(0xFF4285F4), Color(0xFFEFF6FF)),
             TechStackItem("Next.js 15", "App Router & SSR", Icons.Outlined.Web, Color(0xFF0F172A), Color(0xFFF1F5F9)),
             TechStackItem("React", "Frontend Engine", Icons.Outlined.Devices, Color(0xFF0284C7), Color(0xFFE0F2FE)),
-            TechStackItem("Groq LPU", "Sub-500ms AI", Icons.Outlined.SmartToy, Color(0xFFF55036), Color(0xFFFEF2F2)),
+            TechStackItem("Enterprise AI", "Sub-500ms AI", Icons.Outlined.SmartToy, Color(0xFFF55036), Color(0xFFFEF2F2)),
             TechStackItem("Python", "RAG & LLM Agents", Icons.Outlined.Terminal, Color(0xFF3776AB), Color(0xFFE0F2FE)),
             TechStackItem("Firebase", "Firestore Cloud", Icons.Outlined.CloudSync, Color(0xFFFFB300), Color(0xFFFEF9C3)),
             TechStackItem("PostgreSQL", "Enterprise DB", Icons.Outlined.Storage, Color(0xFF336791), Color(0xFFE0F2FE)),
@@ -568,7 +568,7 @@ fun VyaparHomeScreen(
                         ) {
                             HomeCapabilityItem(
                                 title = "AI & RAG",
-                                subtitle = "Groq LPU",
+                                subtitle = "Smart Agent",
                                 icon = Icons.Outlined.SmartToy,
                                 iconColor = Color(0xFF0284C7),
                                 bgColor = Color(0xFFE0F2FE),

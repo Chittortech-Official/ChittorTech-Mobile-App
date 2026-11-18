@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import com.chittortech.app.model.CtUser
 import com.chittortech.app.model.Project
 import com.chittortech.app.theme.*
+import com.chittortech.app.util.formatDateDDMMYYYY
 import com.chittortech.app.ui.components.EmptyState
 import com.chittortech.app.ui.components.StatusBadge
 
@@ -462,8 +463,8 @@ private fun ProjectControlCard(
                     }
                     VaultInfoRow(label = "Hosting Specs", value = project.hostingSpecs)
                     VaultInfoRow(label = "Domain Registrar", value = project.domainRegistrar)
-                    VaultInfoRow(label = "Domain Expiry", value = project.domainExpiryDate)
-                    VaultInfoRow(label = "Hosting Expiry", value = project.hostingExpiryDate)
+                    VaultInfoRow(label = "Domain Expiry", value = formatDateDDMMYYYY(project.domainExpiryDate).ifBlank { "—" })
+                    VaultInfoRow(label = "Hosting Expiry", value = formatDateDDMMYYYY(project.hostingExpiryDate).ifBlank { "—" })
                     VaultInfoRow(label = "SSL Status", value = project.sslStatus)
                     VaultInfoRow(label = "GitHub Repo", value = project.githubRepo) {
                         if (project.githubRepo.isNotBlank()) {

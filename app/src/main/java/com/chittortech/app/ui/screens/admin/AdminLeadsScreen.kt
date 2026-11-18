@@ -257,7 +257,7 @@ private fun LeadCard(
 
     val formattedDate = remember(lead.createdAt) {
         lead.createdAt?.toDate()?.let {
-            SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(it)
+            SimpleDateFormat("dd-MM-yyyy, hh:mm a", Locale.getDefault()).format(it)
         } ?: "Recent"
     }
 

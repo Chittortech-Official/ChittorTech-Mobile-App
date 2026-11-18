@@ -108,7 +108,7 @@ val ChittorTechServiceCatalog = listOf(
         title = "Enterprise AI & RAG Knowledge Systems",
         category = "AI & Automation",
         shortDescription = "Custom LLMs, vector database retrieval (Pinecone/pgvector), autonomous AI agents, and private on-premise AI deployments.",
-        longDescription = "High-performance enterprise AI chatbots and agentic workflows powered by Groq LPUs, Meta Llama 3 70B, and Retrieval-Augmented Generation (RAG). Deliver sub-500ms intelligent customer service, automated document OCR, and multilingual knowledge synthesis without hallucination.",
+        longDescription = "High-performance enterprise AI chatbots and agentic workflows powered by Enterprise LLMs, Meta Llama 3 70B, and Retrieval-Augmented Generation (RAG). Deliver sub-500ms intelligent customer service, automated document OCR, and multilingual knowledge synthesis without hallucination.",
         websiteSlug = "ai-chatbot-development",
         keyFeatures = listOf(
             "RAG (Retrieval-Augmented Generation) with cited sources",
@@ -116,16 +116,16 @@ val ChittorTechServiceCatalog = listOf(
             "Document AI, Smart OCR & Contract extraction",
             "Enterprise multilingual WhatsApp & Web AI bots"
         ),
-        techStack = listOf("Groq LPUs", "Llama 3 70B", "LangChain", "Pinecone", "Python", "FastAPI", "WhatsApp API"),
+        techStack = listOf("Enterprise LLMs", "Llama 3 70B", "LangChain", "Pinecone", "Python", "FastAPI", "WhatsApp API"),
         popularBadge = "MOST POPULAR",
         metrics = listOf(
-            "<500ms" to "Groq LPU Latency",
+            "<500ms" to "Sub-second Latency",
             "99.4%" to "RAG Answer Accuracy",
             "50+" to "Languages Supported",
             "24/7" to "Automated Resolution"
         ),
         deliverables = listOf(
-            "Sub-500ms inference powered by dedicated Groq LPU compute engines",
+            "Sub-500ms inference powered by dedicated high-speed compute engines",
             "Retrieval-Augmented Generation (RAG) referencing internal enterprise PDFs/docs",
             "Autonomous multi-step tool-calling agents for CRM & database actions",
             "Seamless omnichannel integration (WhatsApp, Web Widget, Mobile App)",
@@ -134,7 +134,7 @@ val ChittorTechServiceCatalog = listOf(
         ),
         benefits = listOf(
             "Zero Data Leakage" to "Zero retention API architecture keeping sensitive client data confidential.",
-            "Hyper-Fast Responses" to "500+ tokens/second Groq acceleration eliminates user waiting times.",
+            "Hyper-Fast Responses" to "High-speed token acceleration eliminates user waiting times.",
             "Round-The-Clock Support" to "Automate 80%+ of incoming tier-1 support queries instantly."
         ),
         plans = listOf(
@@ -148,7 +148,7 @@ val ChittorTechServiceCatalog = listOf(
                 name = "Growth RAG Platform",
                 price = "₹85,000",
                 description = "Enterprise RAG with WhatsApp & CRM integrations",
-                features = listOf("WhatsApp Cloud API Integration", "Groq Sub-500ms Inference", "Pinecone Vector Store", "Multi-Turn Memory", "Human Agent Handover", "Priority Tech Support"),
+                features = listOf("WhatsApp Cloud API Integration", "Sub-500ms Realtime Inference", "Pinecone Vector Store", "Multi-Turn Memory", "Human Agent Handover", "Priority Tech Support"),
                 isPopular = true
             ),
             ServicePlan(

@@ -16,3 +16,16 @@
 
 # Keep ChittorTech models for Firebase/Serialization
 -keep class com.chittortech.app.model.** { *; }
+
+# OWASP MASVS-CODE-2: Strip debug and verbose logging in release builds to eliminate Logcat data leakage
+-assumenosideeffects class android.util.Log {
+    public static boolean isLoggable(java.lang.String, int);
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+}
+
+# Preserve LineNumberTable and SourceFile attributes for sanitized crash reporting
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+

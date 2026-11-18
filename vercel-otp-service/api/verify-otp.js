@@ -43,7 +43,14 @@ module.exports = async (req, res) => {
     }
 
     // 3. Recompute cryptographic HMAC
-    const secret = process.env.OTP_SECRET_KEY || 'ChittorTech_Secure_Auth_Salt_2026_Titan';
+    const secret = (process.env.OTP_SECRET_KEY || '').trim();
+    if (!secret || secret.length < 16) {
+      console.error('FATAL: OTP_SECRET_KEY environment variable is not configured.');
+      return res.status(500).json({
+        success: false,
+        message: 'Server security configuration error. Please contact administrator.'
+      });
+    }
     const expectedToken = crypto
       .createHmac('sha256', secret)
       .update(`${cleanEmail}:${cleanOtp}:${expiryTime}`)

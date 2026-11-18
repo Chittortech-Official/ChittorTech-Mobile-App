@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.chittortech.app.model.*
 import com.chittortech.app.theme.*
 import com.chittortech.app.ui.components.*
+import com.chittortech.app.util.*
 
 @Composable
 fun ClientDashboardScreen(
@@ -35,6 +36,9 @@ fun ClientDashboardScreen(
     val activeProjects = if (projects.isNotEmpty()) projects else listOfNotNull(project)
     val pendingCount = invoices.count { it.status != "PAID" }
     val openTickets  = tickets.count { it.status == "OPEN" }
+    val recentTickets = remember(tickets) {
+        tickets.sortedByDescending { it.createdAt?.seconds ?: 0L }.take(5)
+    }
 
     LazyColumn(
         modifier = modifier
@@ -292,17 +296,23 @@ fun ClientDashboardScreen(
             }
         }
 
-        // ── Infrastructure & Renewal Info ────────────────────────────────────
-        val infraProjects = activeProjects.filter { it.domain.isNotBlank() || it.domainExpiryDate.isNotBlank() || it.hostingProvider.isNotBlank() }
-        if (infraProjects.isNotEmpty()) {
+        // ── Active Client Deliverables & Infrastructure ──────────────────────
+        if (activeProjects.isNotEmpty()) {
             item {
                 Spacer(modifier = Modifier.height(20.dp))
                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    SectionHeader(title = "🔒 Infrastructure Status")
+                    SectionHeader(title = "🚀 Active Project Deliverables")
                     Spacer(modifier = Modifier.height(10.dp))
-                    infraProjects.forEachIndexed { idx, p ->
-                        if (idx > 0) Spacer(modifier = Modifier.height(12.dp))
-                        InfraStatusCard(project = p)
+                    activeProjects.forEachIndexed { idx, p ->
+                        if (idx > 0) Spacer(modifier = Modifier.height(14.dp))
+                        when (p.getCategory()) {
+                            ProjectCategory.SEO_MARKETING -> SeoCampaignCard(project = p)
+                            ProjectCategory.MOBILE_APP -> MobileAppReleaseCard(project = p)
+                            ProjectCategory.AI_SOLUTIONS -> AiArchitectureCard(project = p)
+                            ProjectCategory.AI_CHATBOT -> ChatbotStatusCard(project = p)
+                            ProjectCategory.ENTERPRISE_ERP -> EnterpriseErpCard(project = p)
+                            ProjectCategory.WEBSITE_SAAS -> WebSaasInfraCard(project = p)
+                        }
                     }
                 }
             }
@@ -317,9 +327,26 @@ fun ClientDashboardScreen(
                     Spacer(modifier = Modifier.height(10.dp))
                 }
             }
-            items(tickets.take(3)) { ticket ->
+            items(recentTickets) { ticket ->
                 TicketRowCard(ticket = ticket, modifier = Modifier.padding(horizontal = 16.dp))
                 Spacer(modifier = Modifier.height(8.dp))
+            }
+            if (tickets.size > 5) {
+                item {
+                    TextButton(
+                        onClick = onRaiseTicket,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        Text(
+                            text = "View all ${tickets.size} tickets in Helpdesk →",
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = CtPrimaryBlue
+                        )
+                    }
+                }
             }
         }
 
@@ -375,10 +402,10 @@ fun QuickActionCard(
     }
 }
 
-// ─── Infra Status Card (Client-Facing: Domain, SSL, Dates & Maintenance) ──────
+// ─── Dedicated Category-Specific Deliverable Cards ────────────────────────────
 
 @Composable
-fun InfraStatusCard(project: Project, modifier: Modifier = Modifier) {
+fun SeoCampaignCard(project: Project, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -386,166 +413,325 @@ fun InfraStatusCard(project: Project, modifier: Modifier = Modifier) {
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Domain & SSL Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f, fill = false)
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(38.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(CtPrimaryLight),
+                            .background(Color(0xFFFEF3C7)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Language, contentDescription = null, tint = CtPrimaryBlue, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.TrendingUp, contentDescription = null, tint = Color(0xFFB45309), modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text("SEO & Ranking Campaign", fontSize = 11.sp, color = TextSecondary)
+                        Text(project.domain.ifBlank { project.name }, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    }
+                }
+                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFFEF3C7)) {
+                    Text("📈 SEO Active", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFB45309), modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                }
+            }
+            if (project.targetKeywords.isNotBlank()) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFFFFFBEB),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Text("TARGET KEYWORDS FOCUS", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFB45309))
+                        Text(project.targetKeywords, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                    }
+                }
+            }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = CtBorder)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Target Region", fontSize = 11.sp, color = TextSecondary)
+                    Text(project.platform.ifBlank { "Pan-India / Local GMB" }, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Campaign Kickoff", fontSize = 11.sp, color = TextSecondary)
+                    val kickoffDate = formatDateDDMMYYYY(project.buildKickoffDate)
+                    Text(kickoffDate.ifBlank { "Active" }, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MobileAppReleaseCard(project: Project, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CtCardWhite),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xFFECFDF5)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.PhoneAndroid, contentDescription = null, tint = Color(0xFF059669), modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(project.platform.ifBlank { "Android (Google Play)" }, fontSize = 11.sp, color = TextSecondary)
+                        Text(project.domain.ifBlank { "App Package In Progress" }, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    }
+                }
+                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFECFDF5)) {
+                    Text(project.hostingProvider.ifBlank { "12-Tester Track" }, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669), modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                }
+            }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = CtBorder)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Build Kickoff", fontSize = 11.sp, color = TextSecondary)
+                    val kickoffDate = formatDateDDMMYYYY(project.buildKickoffDate)
+                    Text(kickoffDate.ifBlank { "Recent" }, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Target Launch Date", fontSize = 11.sp, color = TextSecondary)
+                    val expiryOrLaunch = formatDateDDMMYYYY(project.domainExpiryDate.ifBlank { project.launchDate })
+                    Text(expiryOrLaunch.ifBlank { "TBD" }, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF059669))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun WebSaasInfraCard(project: Project, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CtCardWhite),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xFFF0F9FF)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Language, contentDescription = null, tint = Color(0xFF0284C7), modifier = Modifier.size(20.dp))
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text("Production Domain", fontSize = 11.sp, color = TextSecondary)
-                        Text(
-                            project.domain.ifBlank { "—" },
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary
-                        )
+                        Text(project.domain.ifBlank { "Domain In Setup" }, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                     }
                 }
-
-                // SSL Badge
-                val isSslActive = project.sslStatus.contains("Active", ignoreCase = true)
+                val isSsl = project.sslStatus.contains("Active", ignoreCase = true)
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = if (isSslActive) CtGreenLight else CtRedLight,
-                    modifier = Modifier.padding(start = 8.dp)
+                    color = if (isSsl) Color(0xFFECFDF5) else Color(0xFFFEF2F2)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.Lock,
-                            contentDescription = null,
-                            tint = if (isSslActive) CtGreen else CtRed,
-                            modifier = Modifier.size(12.dp)
-                        )
+                    Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Lock, contentDescription = null, tint = if (isSsl) Color(0xFF059669) else Color(0xFFEF4444), modifier = Modifier.size(11.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = if (isSslActive) "SSL Active" else "SSL Issue",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (isSslActive) CtGreen else CtRed
-                        )
+                        Text(if (isSsl) "SSL Active" else "SSL Issue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isSsl) Color(0xFF059669) else Color(0xFFEF4444))
                     }
                 }
             }
-
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = CtBorder)
-
-            // Start Date, Expiry Date & Annual Maintenance Grid
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Project Kickoff Date
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Kickoff Date", fontSize = 11.sp, color = TextSecondary)
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.PlayCircle, contentDescription = null, tint = CtGreen, modifier = Modifier.size(13.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            project.buildKickoffDate.ifBlank { "—" },
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = TextPrimary
-                        )
-                    }
+                    Text("Cloud Server", fontSize = 11.sp, color = TextSecondary)
+                    Text(project.hostingProvider.ifBlank { "Vercel / AWS" }, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                 }
-
-                // Domain Expiry Date
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Domain Expiry", fontSize = 11.sp, color = TextSecondary)
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.CalendarToday, contentDescription = null, tint = TextMuted, modifier = Modifier.size(13.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            project.domainExpiryDate.ifBlank { "—" },
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = TextPrimary
-                        )
-                    }
-                }
-
-                // Annual Maintenance (AMC)
-                if (project.annualRenewalFee > 0) {
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text("Annual Maintenance", fontSize = 11.sp, color = TextSecondary)
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            "₹${project.annualRenewalFee.toFormatted()}/yr",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = CtPrimaryBlue
-                        )
-                    }
-                }
-            }
-
-            if (project.hostingProvider.isNotBlank()) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Default.CloudQueue, contentDescription = null, tint = CtPrimaryBlue, modifier = Modifier.size(15.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Cloud Infrastructure: ", fontSize = 11.5.sp, color = TextSecondary)
-                    Text(
-                        project.hostingProvider + if (project.hostingSpecs.isNotBlank()) " (${project.hostingSpecs})" else "",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TextPrimary
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // ChittorTech Admin Note for Deeper Server Configs
-            Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = Color(0xFFF8FAFC),
-                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.Info,
-                        contentDescription = null,
-                        tint = CtPrimaryBlue,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "For custom cloud scaling, dedicated IPs, or server changes, please contact ChittorTech Admin.",
-                        fontSize = 11.sp,
-                        color = TextSecondary,
-                        lineHeight = 15.sp
-                    )
+                    val expiryDate = formatDateDDMMYYYY(project.domainExpiryDate)
+                    Text(expiryDate.ifBlank { "Auto-Renew" }, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0284C7))
                 }
             }
         }
+    }
+}
+
+@Composable
+fun AiArchitectureCard(project: Project, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CtCardWhite),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xFFF5F3FF)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Psychology, contentDescription = null, tint = Color(0xFF7C3AED), modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text("Enterprise AI Architecture", fontSize = 11.sp, color = TextSecondary)
+                        Text(project.platform.ifBlank { "RAG Knowledge Pipeline" }, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    }
+                }
+                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFF5F3FF)) {
+                    Text("🧠 Groq LPU", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7C3AED), modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                }
+            }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = CtBorder)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Foundation Model", fontSize = 11.sp, color = TextSecondary)
+                    Text(project.hostingProvider.ifBlank { "Llama 3.3 (Groq)" }, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Vector DB Store", fontSize = 11.sp, color = TextSecondary)
+                    Text(project.domain.ifBlank { "Pinecone / pgvector" }, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF7C3AED))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ChatbotStatusCard(project: Project, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CtCardWhite),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xFFECFEFF)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.SmartToy, contentDescription = null, tint = Color(0xFF0891B2), modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text("Conversational AI Agent", fontSize = 11.sp, color = TextSecondary)
+                        Text(project.platform.ifBlank { "WhatsApp Business API" }, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    }
+                }
+                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFECFEFF)) {
+                    Text("💬 24/7 Live", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0891B2), modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                }
+            }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = CtBorder)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Bot Persona", fontSize = 11.sp, color = TextSecondary)
+                    Text(project.hostingProvider.ifBlank { "Customer Support & Booking" }, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Languages", fontSize = 11.sp, color = TextSecondary)
+                    Text(project.domain.ifBlank { "Hindi, English" }, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0891B2))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun EnterpriseErpCard(project: Project, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CtCardWhite),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xFFEEF2FF)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.BusinessCenter, contentDescription = null, tint = Color(0xFF4338CA), modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text("Enterprise ERP Suite", fontSize = 11.sp, color = TextSecondary)
+                        Text(project.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    }
+                }
+                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFEEF2FF)) {
+                    Text("🏢 RBAC Active", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4338CA), modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                }
+            }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = CtBorder)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Modules", fontSize = 11.sp, color = TextSecondary)
+                    Text(project.platform.ifBlank { "GST Billing & CRM" }, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Deployment", fontSize = 11.sp, color = TextSecondary)
+                    Text(project.hostingProvider.ifBlank { "Dedicated Cloud VPS" }, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF4338CA))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun InfraStatusCard(project: Project, modifier: Modifier = Modifier) {
+    when (project.getCategory()) {
+        ProjectCategory.SEO_MARKETING -> SeoCampaignCard(project = project, modifier = modifier)
+        ProjectCategory.MOBILE_APP -> MobileAppReleaseCard(project = project, modifier = modifier)
+        ProjectCategory.AI_SOLUTIONS -> AiArchitectureCard(project = project, modifier = modifier)
+        ProjectCategory.AI_CHATBOT -> ChatbotStatusCard(project = project, modifier = modifier)
+        ProjectCategory.ENTERPRISE_ERP -> EnterpriseErpCard(project = project, modifier = modifier)
+        ProjectCategory.WEBSITE_SAAS -> WebSaasInfraCard(project = project, modifier = modifier)
     }
 }
 
@@ -587,7 +773,13 @@ fun TicketRowCard(ticket: SupportTicket, modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(ticket.title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
-                Text(ticket.category, fontSize = 11.sp, color = TextSecondary)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(ticket.category, fontSize = 11.sp, color = TextSecondary)
+                    val dateFormatted = formatTimestampDDMMYYYY(ticket.createdAt)
+                    if (dateFormatted.isNotBlank()) {
+                        Text(" • $dateFormatted", fontSize = 11.sp, color = TextMuted)
+                    }
+                }
             }
             Column(horizontalAlignment = Alignment.End) {
                 StatusBadge(status = ticket.status)

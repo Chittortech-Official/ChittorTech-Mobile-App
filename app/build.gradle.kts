@@ -13,12 +13,11 @@ val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
     localProperties.load(FileInputStream(localPropertiesFile))
 }
-val groqApiKey: String = localProperties.getProperty("GROQ_API_KEY") ?: ""
 
-val releaseStoreFile: String = localProperties.getProperty("RELEASE_STORE_FILE") ?: ""
-val releaseStorePassword: String = localProperties.getProperty("RELEASE_STORE_PASSWORD") ?: ""
-val releaseKeyAlias: String = localProperties.getProperty("RELEASE_KEY_ALIAS") ?: ""
-val releaseKeyPassword: String = localProperties.getProperty("RELEASE_KEY_PASSWORD") ?: ""
+val releaseStoreFile: String = System.getenv("RELEASE_STORE_FILE") ?: localProperties.getProperty("RELEASE_STORE_FILE") ?: ""
+val releaseStorePassword: String = System.getenv("RELEASE_STORE_PASSWORD") ?: localProperties.getProperty("RELEASE_STORE_PASSWORD") ?: ""
+val releaseKeyAlias: String = System.getenv("RELEASE_KEY_ALIAS") ?: localProperties.getProperty("RELEASE_KEY_ALIAS") ?: ""
+val releaseKeyPassword: String = System.getenv("RELEASE_KEY_PASSWORD") ?: localProperties.getProperty("RELEASE_KEY_PASSWORD") ?: ""
 
 android {
     namespace = "com.chittortech.app"
@@ -27,10 +26,8 @@ android {
         applicationId = "com.chittortech.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 6
-        versionName = "6.0.0"
-
-        buildConfigField("String", "GROQ_API_KEY", "\"$groqApiKey\"")
+        versionCode = 7
+        versionName = "7.0.0"
     }
 
     signingConfigs {
@@ -86,6 +83,7 @@ dependencies {
 
     // Core Android
     implementation(libs.androidx.core.ktx)
+    implementation("androidx.fragment:fragment-ktx:1.8.6")
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
 

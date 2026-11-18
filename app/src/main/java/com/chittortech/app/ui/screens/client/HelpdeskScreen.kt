@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.chittortech.app.model.SupportTicket
 import com.chittortech.app.theme.*
 import com.chittortech.app.ui.components.*
+import com.chittortech.app.util.*
 
 @Composable
 fun HelpdeskScreen(
@@ -152,7 +153,13 @@ private fun TicketDetailCard(ticket: SupportTicket) {
                 verticalAlignment = Alignment.Top
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(ticket.ticketId.ifBlank { "#" }, fontSize = 10.sp, color = TextMuted)
+                    val dateFormatted = formatTimestampDDMMYYYY(ticket.createdAt)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(ticket.ticketId.ifBlank { "#" }, fontSize = 10.sp, color = TextMuted)
+                        if (dateFormatted.isNotBlank()) {
+                            Text(" • $dateFormatted", fontSize = 10.sp, color = TextMuted)
+                        }
+                    }
                     Text(ticket.title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(ticket.category, fontSize = 12.sp, color = TextSecondary)

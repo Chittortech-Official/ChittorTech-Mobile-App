@@ -1,6 +1,23 @@
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
+// In-memory Rate Limiting Store
+const rateLimitMap = new Map();
+
+function checkRateLimit(key, maxRequests, windowMs) {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key) || { timestamps: [] };
+  entry.timestamps = entry.timestamps.filter(ts => now - ts < windowMs);
+  if (entry.timestamps.length >= maxRequests) {
+    const oldest = entry.timestamps[0];
+    const retryAfterSeconds = Math.ceil((windowMs - (now - oldest)) / 1000);
+    return { allowed: false, retryAfterSeconds };
+  }
+  entry.timestamps.push(now);
+  rateLimitMap.set(key, entry);
+  return { allowed: true };
+}
+
 module.exports = async (req, res) => {
   // Handle CORS Preflight
   if (req.method === 'OPTIONS') {
@@ -19,6 +36,36 @@ module.exports = async (req, res) => {
     }
 
     const cleanEmail = email.trim().toLowerCase();
+
+    // Client IP detection (supports proxies, load balancers, Vercel edge)
+    const clientIp = (
+      req.headers['x-forwarded-for'] ||
+      req.headers['x-real-ip'] ||
+      req.socket?.remoteAddress ||
+      'unknown'
+    ).split(',')[0].trim();
+
+    // Rate Limiting: Max 3 OTPs per email per 10 mins, Max 5 OTPs per IP per 10 mins
+    const emailCheck = checkRateLimit(`email:${cleanEmail}`, 3, 10 * 60 * 1000);
+    if (!emailCheck.allowed) {
+      res.setHeader('Retry-After', emailCheck.retryAfterSeconds);
+      return res.status(429).json({
+        success: false,
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: `Too many OTP requests for this email. Please wait ${Math.ceil(emailCheck.retryAfterSeconds / 60)} minute(s) before trying again.`
+      });
+    }
+
+    const ipCheck = checkRateLimit(`ip:${clientIp}`, 5, 10 * 60 * 1000);
+    if (!ipCheck.allowed) {
+      res.setHeader('Retry-After', ipCheck.retryAfterSeconds);
+      return res.status(429).json({
+        success: false,
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: `Too many OTP requests from this network. Please wait ${Math.ceil(ipCheck.retryAfterSeconds / 60)} minute(s) before trying again.`
+      });
+    }
+
     const recipientName = name ? name.trim() : cleanEmail.split('@')[0];
     const userRole = (role || 'client').toUpperCase();
     const isAdmin = userRole === 'ADMIN';
@@ -31,7 +78,14 @@ module.exports = async (req, res) => {
     const expiresAt = Date.now() + 5 * 60 * 1000;
 
     // 3. Cryptographic HMAC Token (Tamper-proof signature)
-    const secret = process.env.OTP_SECRET_KEY || 'ChittorTech_Secure_Auth_Salt_2026_Titan';
+    const secret = (process.env.OTP_SECRET_KEY || '').trim();
+    if (!secret || secret.length < 16) {
+      console.error('FATAL: OTP_SECRET_KEY environment variable is not configured.');
+      return res.status(500).json({
+        success: false,
+        message: 'Server security configuration error. Please contact administrator.'
+      });
+    }
     const token = crypto
       .createHmac('sha256', secret)
       .update(`${cleanEmail}:${otp}:${expiresAt}`)
@@ -60,7 +114,8 @@ module.exports = async (req, res) => {
         pass: smtpPass
       },
       tls: {
-        rejectUnauthorized: false
+        rejectUnauthorized: true,
+        minVersion: 'TLSv1.2'
       }
     });
 

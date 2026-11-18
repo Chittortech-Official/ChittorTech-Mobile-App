@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import com.chittortech.app.data.FcmNotificationManager
 import com.chittortech.app.theme.ChittorTechTheme
 import com.chittortech.app.util.NotificationHelper
 
@@ -21,8 +22,10 @@ import com.chittortech.app.util.NotificationHelper
 class MainActivity : ComponentActivity() {
 
     private val requestNotificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ ->
-            // System notification permission granted / handled
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                FcmNotificationManager.syncCurrentSession(this)
+            }
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,6 +34,9 @@ class MainActivity : ComponentActivity() {
 
         // Initialize notification channel
         NotificationHelper.createNotificationChannel(this)
+
+        // Ensure FCM topic subscriptions are active for corporate sessions
+        FcmNotificationManager.syncCurrentSession(this)
 
         // Request POST_NOTIFICATIONS runtime permission for Android 13+ (API 33+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

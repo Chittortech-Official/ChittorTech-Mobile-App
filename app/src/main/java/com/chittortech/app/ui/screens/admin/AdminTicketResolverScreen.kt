@@ -27,6 +27,7 @@ import com.chittortech.app.model.CtUser
 import com.chittortech.app.model.SupportTicket
 import com.chittortech.app.theme.*
 import com.chittortech.app.ui.components.*
+import com.chittortech.app.util.formatTimestampDDMMYYYY
 import java.net.URLEncoder
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -252,12 +253,18 @@ private fun AdminTicketCard(
                         .weight(1f)
                         .padding(end = 12.dp)
                 ) {
-                    Text(
-                        text = ticket.ticketId.ifBlank { "#TKT" },
-                        fontSize = 11.sp,
-                        color = TextMuted,
-                        fontWeight = FontWeight.Bold
-                    )
+                    val dateFormatted = formatTimestampDDMMYYYY(ticket.createdAt)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = ticket.ticketId.ifBlank { "#TKT" },
+                            fontSize = 11.sp,
+                            color = TextMuted,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (dateFormatted.isNotBlank()) {
+                            Text(" • $dateFormatted", fontSize = 11.sp, color = TextMuted)
+                        }
+                    }
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = ticket.title,

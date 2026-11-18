@@ -21,29 +21,28 @@ import androidx.compose.ui.unit.sp
 import com.chittortech.app.theme.*
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
-
 @Composable
 fun StatusBadge(status: String, modifier: Modifier = Modifier) {
     val (bg, fg, label) = when (status.uppercase()) {
         "PAID", "LIVE & ACTIVE", "ACTIVE", "OPEN" -> Triple(CtGreenLight, CtGreen, status)
-        "UNPAID", "IN_PROGRESS", "IN PROGRESS"    -> Triple(CtAmberLight, CtAmber, status.replace("_", " "))
-        "OVERDUE", "RESOLVED", "CLOSED"           -> Triple(CtRedLight, CtRed, status)
-        "FLASHING" -> Triple(CtRedLight, CtRed, "URGENT")
+        "IN_PROGRESS", "IN PROGRESS"              -> Triple(CtAmberLight, CtAmber, "IN PROGRESS")
+        "UNPAID", "OVERDUE", "CLOSED"             -> Triple(CtRedLight, CtRed, status)
+        "RESOLVED"                                -> Triple(CtGreenLight, CtGreen, "RESOLVED")
+        "FLASHING"                                -> Triple(CtRedLight, CtRed, "URGENT")
         else -> Triple(CtSurfaceVariant, TextSecondary, status)
     }
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(bg)
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+            .width(84.dp)
+            .height(24.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(bg),
         contentAlignment = Alignment.Center
     ) {
         Text(label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = fg)
     }
 }
-
 // ─── Priority Badge ───────────────────────────────────────────────────────────
-
 @Composable
 fun PriorityBadge(priority: String, modifier: Modifier = Modifier) {
     val (bg, fg) = when (priority.uppercase()) {
@@ -55,11 +54,13 @@ fun PriorityBadge(priority: String, modifier: Modifier = Modifier) {
     }
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(bg)
-            .padding(horizontal = 8.dp, vertical = 3.dp)
+            .width(84.dp)
+            .height(24.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(bg),
+        contentAlignment = Alignment.Center
     ) {
-        Text(priority, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = fg)
+        Text(priority.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = fg)
     }
 }
 

@@ -178,7 +178,7 @@ private fun InvoiceCard(
                         Text(invoice.projectName, fontSize = 11.5.sp, color = CtPrimaryBlue, fontWeight = FontWeight.SemiBold)
                     }
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("Due: ${invoice.dueDate.ifBlank { "—" }}", fontSize = 11.sp, color = TextSecondary)
+                    Text("Due: ${formatDateDDMMYYYY(invoice.dueDate)}", fontSize = 11.sp, color = TextSecondary)
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     StatusBadge(status = invoice.status)
@@ -377,7 +377,7 @@ private fun RenderedInvoiceDialog(
                         Column(horizontalAlignment = Alignment.End) {
                             Text("DUE DATE", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
                             Spacer(modifier = Modifier.height(2.dp))
-                            Text(invoice.dueDate.ifBlank { "On Receipt" }, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                            Text(formatDateDDMMYYYY(invoice.dueDate), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                         }
                     }
 
@@ -484,27 +484,86 @@ private fun RenderedInvoiceDialog(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Official Notice
+                    // Billing Information & Bank Details
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(12.dp),
                         color = Color(0xFFF8FAFC),
                         border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(
-                            modifier = Modifier.padding(10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.Info, contentDescription = null, tint = CtPrimaryBlue, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
+                        Column(modifier = Modifier.padding(14.dp)) {
                             Text(
-                                text = "Verified digital receipt issued by ChittorTech Innovations. Payment accepted via UPI (business@chittortech) and verified bank transfer.",
-                                fontSize = 10.5.sp,
-                                color = TextSecondary,
-                                lineHeight = 14.sp
+                                "BILLING INFORMATION",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = CtPrimaryBlue
                             )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            val displayInvDate = formatDateDDMMYYYY(
+                                if (invoice.invoiceDate.isNotBlank()) invoice.invoiceDate
+                                else if (invoice.createdAt != null) java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.ENGLISH).format(invoice.createdAt.toDate())
+                                else ""
+                            )
+                            val displayDueDate = formatDateDDMMYYYY(invoice.dueDate)
+                            Text("Date: $displayInvDate", fontSize = 11.5.sp, color = TextPrimary)
+                            Text("Payment Method: ${invoice.paymentMode.ifBlank { "Bank Transfer" }}", fontSize = 11.5.sp, color = TextPrimary)
+                            Text("Due Date: $displayDueDate", fontSize = 11.5.sp, color = TextPrimary)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            HorizontalDivider(color = Color(0xFFE2E8F0))
+                            Spacer(modifier = Modifier.height(6.dp))
+                            val payInfo = if (invoice.paymentInfo.isNotBlank()) invoice.paymentInfo
+                            else "Account Name: ChittorTech\nBank Name: Chittorgarh Urban Co-operative Bank\nUPI ID: Please view the UPI ID in the terms and conditions section"
+                            Text(payInfo, fontSize = 11.sp, color = TextSecondary, lineHeight = 16.sp)
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Terms and Conditions
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFF8FAFC),
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Text(
+                                "TERMS & CONDITIONS",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            val termsList = if (invoice.termsText.isNotBlank()) {
+                                invoice.termsText.split("\n").filter { it.isNotBlank() }
+                            } else {
+                                listOf(
+                                    "Payment is due upon receipt of this milestone invoice.",
+                                    "Work milestone deliverables will be released upon clearance.",
+                                    "Official UPI ID: chittortech@icici (or scan official ChittorTech QR code).",
+                                    "Please make payments payable to ChittorTech official accounts."
+                                )
+                            }
+                            termsList.forEach { term ->
+                                Row(modifier = Modifier.padding(vertical = 2.dp)) {
+                                    Text("• ", fontSize = 11.sp, color = CtPrimaryBlue, fontWeight = FontWeight.Bold)
+                                    Text(term, fontSize = 11.sp, color = TextSecondary, lineHeight = 15.sp)
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Digital Generation Notice (Replaces manual signature)
+                    Text(
+                        "* Bill generated from the digital platform, no manual sign needed",
+                        fontSize = 11.sp,
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                        color = TextMuted,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                        modifier = Modifier.fillMaxWidth().padding(end = 4.dp)
+                    )
                 }
 
                 // Sticky Bottom Action Buttons
@@ -592,161 +651,355 @@ fun printInvoiceDocument(context: Context, invoice: Invoice) {
     }
 }
 
+fun formatDateDDMMYYYY(dateStr: String): String {
+    return com.chittortech.app.util.formatDateDDMMYYYY(dateStr, fallbackToTodayIfBlank = true)
+}
+
 fun generateInvoiceHtml(invoice: Invoice): String {
+    val items = if (invoice.lineItems.isNotEmpty()) invoice.lineItems
+    else listOf(com.chittortech.app.model.InvoiceLineItem(invoice.title.ifBlank { "Software Development Deliverable" }, invoice.amount))
+
     val itemsHtml = buildString {
-        if (invoice.lineItems.isEmpty()) {
+        items.forEachIndexed { idx, item ->
+            val bg = if (idx % 2 == 1) "rgba(244,246,248,0.85)" else "rgba(255,255,255,0.85)"
             append("""
-                <tr>
-                    <td style="padding: 10px 12px; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #475569;">1</td>
-                    <td style="padding: 10px 12px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 600; color: #1E293B;">${invoice.title}</td>
-                    <td style="padding: 10px 12px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: bold; text-align: right; color: #1E293B;">₹${invoice.amount.fmt()}</td>
+                <tr style="background: $bg;">
+                    <td style="padding: 7px 10px; font-size: 12px; font-weight: 700; color: #1A1A1A;">${idx + 1}</td>
+                    <td style="padding: 7px 10px; font-size: 12px; color: #334155;">${item.description}</td>
+                    <td style="padding: 7px 10px; font-size: 12px; text-align: center; color: #4A4A4A;">1</td>
+                    <td style="padding: 7px 10px; font-size: 12px; text-align: right; color: #4A4A4A;">₹${item.amount.fmt()}</td>
+                    <td style="padding: 7px 10px; font-size: 12px; text-align: right; color: #4A4A4A;">₹${item.amount.fmt()}</td>
                 </tr>
             """.trimIndent())
-        } else {
-            invoice.lineItems.forEachIndexed { idx, item ->
-                append("""
-                    <tr>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #475569;">${idx + 1}</td>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 600; color: #1E293B;">${item.description}</td>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: bold; text-align: right; color: #1E293B;">₹${item.amount.fmt()}</td>
-                    </tr>
-                """.trimIndent())
-            }
         }
     }
 
     val isPaid = invoice.status.equals("PAID", ignoreCase = true)
-    val statusColor = if (isPaid) "#16A34A" else "#DC2626"
-    val statusBg = if (isPaid) "#DCFCE7" else "#FEE2E2"
+    val totalLabel = if (isPaid) "Total Amount Paid" else "Total Amount Due"
+    val clientName = invoice.clientId.ifBlank { "Valued Client" }
+    val rawDate = if (invoice.invoiceDate.isNotBlank()) invoice.invoiceDate
+        else if (invoice.createdAt != null) java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.ENGLISH).format(invoice.createdAt.toDate())
+        else ""
+    val invDate = formatDateDDMMYYYY(rawDate)
+    val dueDateFormatted = formatDateDDMMYYYY(invoice.dueDate)
+
+    val paymentInfoHtml = if (invoice.paymentInfo.isNotBlank()) {
+        invoice.paymentInfo.replace("\n", "<br>")
+    } else {
+        "Account Name: ChittorTech<br>Bank Name: Chittorgarh Urban Co-operative Bank<br>UPI ID: Please view the UPI ID in the terms and conditions section"
+    }
+
+    val termsItemsHtml = if (invoice.termsText.isNotBlank()) {
+        invoice.termsText.split("\n").filter { it.isNotBlank() }.joinToString("") { "<li>$it</li>" }
+    } else {
+        """
+            <li>Payment is due upon receipt of this milestone invoice.</li>
+            <li>Work milestone deliverables will be released upon clearance.</li>
+            <li>Official UPI ID: chittortech@icici (or scan official ChittorTech QR code).</li>
+            <li>Please make payments payable to ChittorTech official accounts.</li>
+        """.trimIndent()
+    }
 
     return """
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>ChittorTech Invoice ${invoice.invoiceId}</title>
             <style>
+                * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }
+                @page { size: A4 portrait; margin: 0; }
                 body {
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
                     margin: 0;
-                    padding: 28px;
-                    color: #0F172A;
-                    background-color: #FFFFFF;
+                    padding: 0;
+                    background: #ffffff;
+                    color: #1A1A1A;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Helvetica, Arial, sans-serif;
                 }
-                .header-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-                .brand-title { font-size: 22px; font-weight: 800; color: #1E3A8A; letter-spacing: 0.5px; margin: 0; }
-                .brand-subtitle { font-size: 11px; color: #64748B; margin: 3px 0 0 0; }
-                .inv-title { font-size: 24px; font-weight: 800; color: #0F172A; text-align: right; margin: 0; }
-                .inv-meta { font-size: 12px; color: #64748B; text-align: right; margin: 3px 0 0 0; }
-                .badge {
-                    display: inline-block;
-                    padding: 4px 12px;
-                    border-radius: 6px;
-                    font-size: 12px;
-                    font-weight: 700;
-                    color: $statusColor;
-                    background-color: $statusBg;
-                    margin-top: 6px;
+                .inv-wrapper {
+                    width: 100%;
+                    max-width: 210mm;
+                    min-height: 297mm;
+                    margin: 0 auto;
+                    padding: 40px 34px 0 34px;
+                    display: flex;
+                    flex-direction: column;
+                    position: relative;
+                    font-size: 12.5px;
+                    line-height: 1.55;
                 }
-                .info-box {
-                    background: #F8FAFC;
-                    border: 1px solid #E2E8F0;
-                    border-radius: 8px;
-                    padding: 14px 18px;
-                    margin-bottom: 24px;
+                .inv-watermark {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    width: 55%;
+                    opacity: 0.08;
+                    pointer-events: none;
+                    z-index: 1;
                 }
-                .items-table {
+                .inv-body { flex: 1; position: relative; z-index: 2; }
+                .inv-title {
+                    font-size: 28px;
+                    font-weight: 800;
+                    color: #0B2545;
+                    margin: 0 0 11px 0;
+                    letter-spacing: -0.3px;
+                    line-height: 1.1;
+                }
+                .inv-top-banner {
+                    display: flex;
+                    width: 100%;
+                    height: 60px;
+                    margin-bottom: 16px;
+                }
+                .inv-banner-left {
+                    background-color: #0B2545;
+                    color: #ffffff;
+                    padding: 0 18px;
+                    flex: 0 0 54%;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    gap: 4px;
+                }
+                .inv-banner-left p { margin: 0; font-size: 12px; }
+                .inv-banner-left strong { font-weight: 700; margin-right: 5px; }
+                .inv-banner-right {
+                    background-color: #E8EDF3;
+                    flex: 1;
+                    display: flex;
+                    align-items: center;
+                    padding: 0 46px 0 14px;
+                    gap: 11px;
+                    position: relative;
+                    overflow: hidden;
+                }
+                .inv-banner-right::after {
+                    content: '';
+                    position: absolute;
+                    right: 0; top: 0; bottom: 0;
+                    width: 13px;
+                    background: #0B2545;
+                }
+                .inv-banner-right img { height: 48px; width: auto; object-fit: contain; }
+                .inv-banner-right h2 { font-size: 24px; font-weight: 800; color: #0B2545; margin: 0; }
+                .inv-divider {
+                    border: none;
+                    border-top: 1.5px dashed #3CBFB4;
+                    margin: 0 0 16px 0;
+                }
+                .inv-billing-row {
+                    display: flex;
+                    justify-content: space-between;
+                    gap: 18px;
+                    margin-bottom: 18px;
+                }
+                .inv-billing-col { flex: 1; }
+                .inv-billing-col h3 {
+                    font-size: 14px;
+                    font-weight: 900;
+                    color: #000000;
+                    margin: 0 0 7px 0;
+                }
+                .inv-billing-col p { margin: 0 0 3px 0; font-size: 12px; color: #4A4A4A; }
+                .inv-billing-col strong { color: #1A1A1A; font-weight: 600; }
+                .inv-section-title {
+                    font-size: 14px;
+                    font-weight: 900;
+                    color: #000000;
+                    margin: 0 0 7px 0;
+                }
+                .inv-table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-bottom: 20px;
                 }
-                .items-table th {
-                    background: #F1F5F9;
-                    padding: 10px 12px;
-                    font-size: 11px;
+                .inv-table thead tr { background: #3CBFB4; }
+                .inv-table th {
+                    color: #ffffff;
                     font-weight: 700;
-                    text-transform: uppercase;
-                    color: #475569;
+                    font-size: 11.5px;
+                    padding: 8px 10px;
                     text-align: left;
-                    border-bottom: 2px solid #CBD5E1;
                 }
-                .footer {
-                    margin-top: 48px;
-                    padding-top: 16px;
-                    border-top: 1px solid #E2E8F0;
+                .inv-table th.r { text-align: right; }
+                .inv-table th.c { text-align: center; }
+                .inv-totals-box {
+                    background: #0B2545;
+                    color: #ffffff;
+                    padding: 9px 14px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 3px;
+                    margin-bottom: 18px;
+                }
+                .inv-total-row {
+                    display: flex;
+                    justify-content: space-between;
+                    font-size: 12px;
+                }
+                .inv-total-row.big {
+                    font-size: 13.5px;
+                    font-weight: 800;
+                    border-top: 1px solid rgba(255,255,255,0.25);
+                    padding-top: 5px;
+                    margin-top: 3px;
+                }
+                .inv-lower-row {
+                    display: flex;
+                    gap: 18px;
+                    margin-bottom: 18px;
+                }
+                .inv-card-box {
+                    flex: 1;
+                    border: 1.5px solid #D8DDE3;
+                    border-radius: 4px;
+                    padding: 13px 15px;
+                    background: rgba(255,255,255,0.8);
+                }
+                .inv-card-box h3 {
+                    font-size: 14px;
+                    font-weight: 900;
+                    color: #000000;
+                    margin: 0 0 9px 0;
+                    padding-bottom: 6px;
+                    border-bottom: 1.5px solid #D8DDE3;
+                }
+                .inv-card-box p { margin: 0 0 4px 0; font-size: 12px; color: #4A4A4A; }
+                .inv-card-box strong { color: #1A1A1A; font-weight: 600; }
+                .inv-card-box ul { margin: 0; padding-left: 16px; font-size: 11.5px; color: #4A4A4A; }
+                .inv-card-box ul li { margin-bottom: 4px; }
+                .inv-signature-area {
+                    display: flex;
+                    justify-content: flex-end;
+                    padding-right: 4px;
+                    margin-bottom: 16px;
+                }
+                .inv-sig-block { text-align: right; min-width: 260px; }
+                .inv-sig-date { font-size: 12px; font-weight: 700; color: #1A1A1A; margin-bottom: 6px; }
+                .inv-sig-disclaimer {
                     font-size: 11px;
-                    color: #94A3B8;
-                    text-align: center;
+                    color: #475569;
+                    font-weight: 600;
+                    font-style: italic;
+                    letter-spacing: 0.2px;
+                }
+                .inv-footer-bar {
+                    background: #0B2545;
+                    color: #ffffff;
+                    padding: 11px 20px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    font-size: 12px;
+                    margin-top: auto;
+                    position: relative;
+                    z-index: 2;
                 }
             </style>
         </head>
         <body>
-            <table class="header-table">
-                <tr>
-                    <td style="vertical-align: top;">
-                        <h1 class="brand-title">CHITTORTECH INNOVATIONS</h1>
-                        <p class="brand-subtitle">Enterprise Software, Mobile & Cloud Solutions</p>
-                        <p class="brand-subtitle">business@chittortech.in &bull; contact@chittortech.in &bull; chittortech.in</p>
-                    </td>
-                    <td style="vertical-align: top; text-align: right;">
-                        <h2 class="inv-title">TAX INVOICE</h2>
-                        <p class="inv-meta">Invoice #: <strong>${invoice.invoiceId}</strong></p>
-                        <p class="inv-meta">Due Date: <strong>${invoice.dueDate.ifBlank { "On Receipt" }}</strong></p>
-                        <div><span class="badge">${invoice.status}</span></div>
-                    </td>
-                </tr>
-            </table>
+            <div class="inv-wrapper">
+                <img src="https://chittortech.in/images/chittortech_logo.png" class="inv-watermark" alt="">
+                <div class="inv-body">
+                    <h1 class="inv-title">Invoice Service</h1>
 
-            <div class="info-box">
-                <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; margin-bottom: 4px;">Invoice Scope & Description</div>
-                <div style="font-size: 14px; font-weight: 700; color: #1E293B;">${invoice.title}</div>
-            </div>
+                    <div class="inv-top-banner">
+                        <div class="inv-banner-left">
+                            <p><strong>Invoice Number:</strong> ${invoice.invoiceId}</p>
+                            <p><strong>Invoice Date:</strong> ${invDate}</p>
+                        </div>
+                        <div class="inv-banner-right">
+                            <img src="https://chittortech.in/images/chittortech_logo.png" alt="ChittorTech Logo">
+                            <h2>ChittorTech</h2>
+                        </div>
+                    </div>
 
-            <table class="items-table">
-                <thead>
-                    <tr>
-                        <th style="width: 40px;">#</th>
-                        <th>Service / Deliverable Description</th>
-                        <th style="width: 130px; text-align: right;">Amount (INR)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    $itemsHtml
-                </tbody>
-            </table>
+                    <hr class="inv-divider">
 
-            <table style="width: 100%; margin-top: 20px;">
-                <tr>
-                    <td style="vertical-align: top; width: 55%; font-size: 11.5px; color: #64748B; line-height: 18px;">
-                        <strong>ChittorTech Payment Support:</strong><br>
-                        &bull; UPI ID: <code>business@chittortech</code><br>
-                        &bull; Bank Transfer / NEFT / IMPS<br>
-                        &bull; For billing queries: contact@chittortech.in
-                    </td>
-                    <td style="vertical-align: top; width: 45%;">
-                        <table style="width: 100%; border-collapse: collapse;">
+                    <div class="inv-billing-row">
+                        <div class="inv-billing-col">
+                            <h3>Billing Information:</h3>
+                            <p><strong>Company Name:</strong> ChittorTech</p>
+                            <p><strong>Company Address:</strong> Chittorgarh, Rajasthan – 312001</p>
+                            <p><strong>Phone Number:</strong> +91 7597451057</p>
+                            <p><strong>Email:</strong> business@chittortech.in</p>
+                        </div>
+                        <div class="inv-billing-col">
+                            <h3>Bill To:</h3>
+                            <p><strong>Customer Name:</strong> ${clientName}</p>
+                            <p><strong>Billing Address:</strong> Chittorgarh, Rajasthan</p>
+                            <p><strong>Phone:</strong> +91 7597451057</p>
+                            <p><strong>Email:</strong> ${invoice.clientId}</p>
+                        </div>
+                    </div>
+
+                    <h2 class="inv-section-title">Service Details:</h2>
+                    <table class="inv-table">
+                        <thead>
                             <tr>
-                                <td style="padding: 6px 0; font-size: 13px; color: #64748B;">Total Amount:</td>
-                                <td style="padding: 6px 0; font-size: 13px; font-weight: 600; text-align: right;">₹${invoice.amount.fmt()}</td>
+                                <th style="width: 32px;">No</th>
+                                <th>Item Description</th>
+                                <th class="c" style="width: 88px;">Hours/Units</th>
+                                <th class="r" style="width: 110px;">Rate/Unit (₹)</th>
+                                <th class="r" style="width: 100px;">Total (₹)</th>
                             </tr>
-                            <tr style="border-top: 2px solid #0F172A;">
-                                <td style="padding: 10px 0; font-size: 15px; font-weight: 800; color: #0F172A;">Total Payable:</td>
-                                <td style="padding: 10px 0; font-size: 18px; font-weight: 800; text-align: right; color: #1E3A8A;">₹${invoice.amount.fmt()}</td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
+                        </thead>
+                        <tbody>
+                            ${itemsHtml}
+                        </tbody>
+                    </table>
 
-            <div class="footer">
-                Thank you for partnering with ChittorTech Innovations &bull; www.chittortech.in &bull; Official Digital Invoice
+                    <div class="inv-totals-box">
+                        <div class="inv-total-row">
+                            <span>Subtotal</span>
+                            <span>₹${invoice.amount.fmt()}</span>
+                        </div>
+                        <div class="inv-total-row big">
+                            <span>${totalLabel}</span>
+                            <span>₹${invoice.amount.fmt()}</span>
+                        </div>
+                    </div>
+
+                    <div class="inv-lower-row">
+                        <div class="inv-card-box">
+                            <h3>Billing Information:</h3>
+                            <p><strong>Date: </strong>${invDate}</p>
+                            <p><strong>Payment Method: </strong>${invoice.paymentMode.ifBlank { "Bank Transfer" }}</p>
+                            <p><strong>Due Date: </strong>${dueDateFormatted}</p>
+                            <div style="margin-top: 6px; font-size: 11px; color: #4A4A4A; line-height: 1.4;">
+                                ${paymentInfoHtml}
+                            </div>
+                        </div>
+                        <div class="inv-card-box">
+                            <h3>Terms and Conditions:</h3>
+                            <ul style="margin: 0; padding-left: 16px; font-size: 11.5px; color: #4A4A4A;">
+                                ${termsItemsHtml}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="inv-signature-area">
+                        <div class="inv-sig-block">
+                            <div class="inv-sig-date">Date: ${invDate}</div>
+                            <div class="inv-sig-disclaimer">
+                                * Bill generated from the digital platform, no manual sign needed
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="inv-footer-bar">
+                    <span>📞 +91 7597451057</span>
+                    <span>✉ business@chittortech.in</span>
+                    <span>🌐 chittortech.in</span>
+                </div>
             </div>
         </body>
         </html>
     """.trimIndent()
 }
-
 @Composable
 private fun SummaryChip(value: String, label: String, color: Color, modifier: Modifier = Modifier) {
     Card(

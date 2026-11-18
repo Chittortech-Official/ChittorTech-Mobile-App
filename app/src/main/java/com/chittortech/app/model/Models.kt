@@ -41,9 +41,59 @@ data class Project(
     val annualRenewalFee: Long = 0L,
     val status: String = "Live & Active",
     val currentPhase: String = "",
-    val milestoneProgress: Int = 0, // 0-100
-    val sowPdfUrl: String = ""
+    val milestoneProgress: Int = 0,
+    val sowPdfUrl: String = "",
+    val type: String = "",
+    val platform: String = "",
+    val targetKeywords: String = ""
 )
+
+enum class ProjectCategory(val label: String, val badgeColorHex: Long) {
+    WEBSITE_SAAS("Web / SaaS", 0xFF0284C7),
+    MOBILE_APP("Mobile App", 0xFF10B981),
+    SEO_MARKETING("SEO & Marketing", 0xFFF59E0B),
+    AI_SOLUTIONS("AI & Machine Learning", 0xFF8B5CF6),
+    AI_CHATBOT("AI & WhatsApp Chatbot", 0xFF06B6D4),
+    ENTERPRISE_ERP("Enterprise ERP / CRM", 0xFF6366F1)
+}
+
+fun Project.getCategory(): ProjectCategory {
+    val t = type.lowercase().trim()
+    val n = name.lowercase().trim()
+    val p = platform.lowercase().trim()
+    val d = domain.lowercase().trim()
+    return when {
+        // 1. Direct explicit type matching (matching Admin Portal 100%)
+        t == "website / web saas" || t == "web / saas" || t.contains("website") || t.contains("saas") || (t.contains("web") && !t.contains("mobile")) ->
+            ProjectCategory.WEBSITE_SAAS
+        t == "mobile app (android / ios)" || t == "mobile app" || t.contains("mobile") ->
+            ProjectCategory.MOBILE_APP
+        t == "seo & digital marketing" || t == "seo & marketing" || t.contains("seo") || t.contains("marketing") ->
+            ProjectCategory.SEO_MARKETING
+        t == "ai & machine learning" || (t.contains("ai") && !t.contains("chatbot")) || t.contains("machine learning") ->
+            ProjectCategory.AI_SOLUTIONS
+        t == "ai & whatsapp chatbot" || t.contains("chatbot") || t.contains("bot") ->
+            ProjectCategory.AI_CHATBOT
+        t == "enterprise software / erp" || t.contains("erp") || t.contains("crm") ->
+            ProjectCategory.ENTERPRISE_ERP
+
+        // 2. Name-based heuristics (if legacy data)
+        n.contains("website") || n.contains("saas") || n.contains("web ") ->
+            ProjectCategory.WEBSITE_SAAS
+        n.contains("seo") || n.contains("marketing") ->
+            ProjectCategory.SEO_MARKETING
+        n.contains("chatbot") || n.contains("bot") ->
+            ProjectCategory.AI_CHATBOT
+        n.contains("ai") || n.contains("ml") || n.contains("rag") ->
+            ProjectCategory.AI_SOLUTIONS
+        n.contains("erp") || n.contains("crm") || n.contains("vyapar") || n.contains("billing") ->
+            ProjectCategory.ENTERPRISE_ERP
+        n.contains("mobile app") || n.contains("apk") || d.contains("play.google.com") || ((p.contains("android") || p.contains("ios")) && !n.contains("website")) ->
+            ProjectCategory.MOBILE_APP
+
+        else -> ProjectCategory.WEBSITE_SAAS
+    }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Invoice Model
@@ -61,7 +111,11 @@ data class Invoice(
     val dueDate: String = "",
     val invoicePdfUrl: String = "",
     val signedSowUrl: String? = null,
-    val createdAt: Timestamp? = null
+    val createdAt: Timestamp? = null,
+    val invoiceDate: String = "",
+    val paymentMode: String = "Bank Transfer",
+    val paymentInfo: String = "",
+    val termsText: String = ""
 )
 
 data class InvoiceLineItem(
@@ -158,4 +212,18 @@ data class AppNotification(
     val targetClientId: String = "",
     val timestamp: Timestamp? = null
 )
+
+// ─────────────────────────────────────────────────────────────────────────────
+// In-App AI Assistant Models
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum class MessageSender { USER, BOT }
+
+data class ChatMessage(
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val sender: MessageSender = MessageSender.BOT,
+    val text: String = "",
+    val timestamp: Long = System.currentTimeMillis()
+)
+
 

@@ -123,7 +123,7 @@ object ChittorTechKnowledgeBase {
 
 30. RESPONSE RULES
 - No hallucination. No static pricing. No guaranteed timelines or SEO rankings. No direct meeting scheduling.
-- Do NOT reveal built on OpenAI/Meta/Groq. You are ChittorTech GPT.
+- You are ChittorTech GPT, proprietary enterprise AI.
 - For scheduling/demos: always use [ACTION:SCHEDULE] or [ACTION:DEMO].
 
 31. EMAIL DELIVERABILITY & CLOUD INFRASTRUCTURE
@@ -154,7 +154,7 @@ CRITICAL RESPONSE FORMAT RULES:
 3. NEXT STEPS: Always end with a friendly closing sentence and action tags. NEVER leave dangling words like 'or' or 'and' before the tags. Output clean like: "Ready to discuss your project? Let's connect! [ACTION:WHATSAPP] [ACTION:CONTACT]".
 4. PRICING: NEVER give fixed prices for custom work. Exception: Google Play packages (Rs10299/Rs25999/Rs29499).
 5. BREVITY: Mobile-first, crisp, no scrolling fatigue.
-6. IDENTITY: Do NOT say you are OpenAI/Meta/Groq. You are ChittorTech GPT.
+6. IDENTITY: You are ChittorTech GPT, official AI Assistant.
 7. ACTION TAGS (app converts these to native buttons):
    [ACTION:WHATSAPP]   -> WhatsApp chat with team
    [ACTION:CONTACT]    -> Phone dialer
@@ -228,7 +228,7 @@ ${'$'}{MASTER_KNOWLEDGE_BASE}
             }
             (q.contains("ai") || q.contains("rag") || q.contains("llm") || q.contains("gpt") || q.contains("chatbot") || q.contains("agent")) -> {
                 "**ChittorTech Enterprise AI & Automation:**\n\n" +
-                "• **AI Chatbots:** Groq LPU powered, sub-second response\n" +
+                "• **AI Chatbots:** Enterprise AI powered, sub-second response\n" +
                 "• **Private RAG:** Pinecone/pgvector, cited answers on your data\n" +
                 "• **Autonomous Agents:** Document OCR, invoice parsing, sales outreach\n" +
                 "• **WhatsApp AI:** 24/7 automated lead capture & booking\n\n" +

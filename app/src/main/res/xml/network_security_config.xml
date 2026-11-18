@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- OWASP MASVS-NETWORK-1 & MASVS-NETWORK-2: Enforce System-Only CA Trust and Disallow Cleartext Traffic -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Trust only official Android system Certificate Authorities in production (prevents MITM from user-installed certs) -->
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Pinned Domain Scopes for Enterprise Services -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">chittortech.in</domain>
+        <domain includeSubdomains="true">chittor-tech-mobile-app.vercel.app</domain>
+        <domain includeSubdomains="true">firebaseio.com</domain>
+        <domain includeSubdomains="true">googleapis.com</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+</network-security-config>

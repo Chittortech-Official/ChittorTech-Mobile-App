@@ -1,5 +1,22 @@
 const nodemailer = require('nodemailer');
 
+// In-memory Rate Limiting Store
+const rateLimitMap = new Map();
+
+function checkRateLimit(key, maxRequests, windowMs) {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key) || { timestamps: [] };
+  entry.timestamps = entry.timestamps.filter(ts => now - ts < windowMs);
+  if (entry.timestamps.length >= maxRequests) {
+    const oldest = entry.timestamps[0];
+    const retryAfterSeconds = Math.ceil((windowMs - (now - oldest)) / 1000);
+    return { allowed: false, retryAfterSeconds };
+  }
+  entry.timestamps.push(now);
+  rateLimitMap.set(key, entry);
+  return { allowed: true };
+}
+
 module.exports = async (req, res) => {
   // Handle CORS Preflight
   if (req.method === 'OPTIONS') {
@@ -16,6 +33,25 @@ module.exports = async (req, res) => {
     const cleanEmail = (attemptedEmail || 'Unknown').trim();
     const failureReason = (reason || 'Incorrect Master Access Key').trim();
     const appPlatform = (platform || 'ChittorTech Official Android Mobile App').trim();
+
+    // Client IP detection
+    const clientIp = (
+      req.headers['x-forwarded-for'] ||
+      req.headers['x-real-ip'] ||
+      req.socket?.remoteAddress ||
+      'unknown'
+    ).split(',')[0].trim();
+
+    // Rate Limiting: Max 3 security alerts per IP per 10 mins
+    const alertCheck = checkRateLimit(`alert:${clientIp}`, 3, 10 * 60 * 1000);
+    if (!alertCheck.allowed) {
+      res.setHeader('Retry-After', alertCheck.retryAfterSeconds);
+      return res.status(429).json({
+        success: false,
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: 'Security alert request throttled.'
+      });
+    }
 
     // Configure GoDaddy SMTP Transporter
     const smtpUser = (process.env.TITAN_USER || process.env.SMTP_USER || 'business@chittortech.in').trim();
@@ -40,7 +76,8 @@ module.exports = async (req, res) => {
         pass: smtpPass
       },
       tls: {
-        rejectUnauthorized: false
+        rejectUnauthorized: true,
+        minVersion: 'TLSv1.2'
       }
     });
 

@@ -207,8 +207,10 @@ fun AdminDashboardScreen(
             }
         }
 
-        // ── Renewal Alerts ────────────────────────────────────────────────────
-        val renewalAlerts = projects.mapNotNull { p ->
+        // ── Renewal Alerts (Only Web / SaaS domains with active ICANN expiry) ─
+        val renewalAlerts = projects.filter { p ->
+            p.getCategory() == ProjectCategory.WEBSITE_SAAS && p.domainExpiryDate.isNotBlank()
+        }.mapNotNull { p ->
             val days = daysUntil(p.domainExpiryDate)
             if (days != null && days <= 30) Pair(p, days) else null
         }.sortedBy { it.second }
@@ -222,8 +224,9 @@ fun AdminDashboardScreen(
                 }
             }
             items(renewalAlerts) { (project, days) ->
+                val expFormatted = formatDateDDMMYYYY(project.domainExpiryDate)
                 RenewalAlertBanner(
-                    label = "${project.name} — Domain Expires",
+                    label = if (expFormatted.isNotBlank()) "${project.name} — Domain Expires ($expFormatted)" else "${project.name} — Domain Expires",
                     daysLeft = days,
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
@@ -328,11 +331,9 @@ fun AdminDashboardScreen(
                                 color = TextSecondary,
                                 lineHeight = 16.sp
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            val timeStr = formatTimestampDDMMYYYYTime(notif.timestamp)
                             Text(
-                                notif.timestamp?.toDate()?.let { d ->
-                                    java.text.SimpleDateFormat("dd MMM yyyy, hh:mm a", java.util.Locale.getDefault()).format(d)
-                                } ?: "Just now",
+                                if (timeStr.isNotBlank()) timeStr else "Just now",
                                 fontSize = 10.sp,
                                 color = TextMuted
                             )
@@ -461,7 +462,13 @@ private fun AdminInvoiceRow(invoice: Invoice, modifier: Modifier = Modifier) {
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(invoice.invoiceId.ifBlank { "Invoice" }, fontSize = 11.sp, color = TextMuted)
+                val dueFormatted = formatDateDDMMYYYY(invoice.dueDate)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(invoice.invoiceId.ifBlank { "Invoice" }, fontSize = 11.sp, color = TextMuted)
+                    if (dueFormatted.isNotBlank()) {
+                        Text(" • Due: $dueFormatted", fontSize = 10.5.sp, color = TextMuted)
+                    }
+                }
                 Text(invoice.title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
             }
             Column(horizontalAlignment = Alignment.End) {

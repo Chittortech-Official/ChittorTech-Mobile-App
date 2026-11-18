@@ -18,6 +18,10 @@ object NotificationHelper {
     const val CHANNEL_NAME = "ChittorTech Alerts & Activity"
     const val CHANNEL_DESC = "Real-time updates for invoices, tickets, leads, and server deployments"
 
+    private const val PREFS_NAME = "chittortech_notif_history"
+
+    private val inMemoryDedupe = java.util.concurrent.ConcurrentHashMap<String, Long>()
+
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManager =
@@ -44,29 +48,56 @@ object NotificationHelper {
         }
     }
 
-    private val recentNotificationTimestamps = java.util.concurrent.ConcurrentHashMap<String, Long>()
+    /**
+     * Checks if a persistent notification key (like "ticket_TKT-123_RESOLVED") was already notified.
+     */
+    fun wasAlreadyNotified(context: Context, key: String): Boolean {
+        if (key.isBlank()) return false
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.contains(key)
+    }
+
+    /**
+     * Records that a persistent notification key was notified so it never repeats across launches.
+     */
+    fun markAsNotified(context: Context, key: String) {
+        if (key.isBlank()) return
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putLong(key, System.currentTimeMillis()).apply()
+    }
 
     fun showNotification(
         context: Context,
         title: String,
         message: String,
-        notificationId: Int = System.currentTimeMillis().toInt()
+        dedupeKey: String? = null,
+        notificationId: Int? = null
     ) {
         val cleanTitle = title.trim()
         val cleanMsg = message.trim()
-        val dedupeKey = "$cleanTitle|$cleanMsg"
+        val effectiveKey = dedupeKey?.trim()?.ifBlank { null } ?: "$cleanTitle|$cleanMsg"
         val now = System.currentTimeMillis()
 
-        // Drop duplicate if identical title + message was dispatched within the last 15 seconds
-        val lastSeen = recentNotificationTimestamps[dedupeKey]
-        if (lastSeen != null && (now - lastSeen) < 15_000L) {
+        // 1. Persistent deduplication check: If this exact key was already dispatched, DROP it!
+        if (dedupeKey != null && wasAlreadyNotified(context, effectiveKey)) {
             return
         }
-        recentNotificationTimestamps[dedupeKey] = now
 
-        // Housekeeping: purge entries older than 60 seconds
-        if (recentNotificationTimestamps.size > 50) {
-            val iterator = recentNotificationTimestamps.entries.iterator()
+        // 2. In-memory rapid-fire drop (within 10 seconds for identical alerts)
+        val lastSeen = inMemoryDedupe[effectiveKey]
+        if (lastSeen != null && (now - lastSeen) < 10_000L) {
+            return
+        }
+        inMemoryDedupe[effectiveKey] = now
+
+        // Persist so it never fires again across app restarts
+        if (dedupeKey != null) {
+            markAsNotified(context, effectiveKey)
+        }
+
+        // Housekeeping in-memory map
+        if (inMemoryDedupe.size > 100) {
+            val iterator = inMemoryDedupe.entries.iterator()
             while (iterator.hasNext()) {
                 val entry = iterator.next()
                 if (now - entry.value > 60_000L) {
@@ -80,12 +111,14 @@ object NotificationHelper {
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
 
+        val targetId = notificationId ?: (Math.abs(effectiveKey.hashCode()) % 100000)
+
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         val pendingIntent = PendingIntent.getActivity(
             context,
-            notificationId,
+            targetId,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -94,9 +127,9 @@ object NotificationHelper {
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle(title)
-            .setContentText(message)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setContentTitle(cleanTitle)
+            .setContentText(cleanMsg)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(cleanMsg))
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setSound(soundUri)
@@ -104,6 +137,6 @@ object NotificationHelper {
             .setContentIntent(pendingIntent)
             .build()
 
-        notificationManager.notify(notificationId, notification)
+        notificationManager.notify(targetId, notification)
     }
 }

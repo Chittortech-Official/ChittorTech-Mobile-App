@@ -131,7 +131,7 @@ fun VyaparMenuScreen(
 
                             MenuItemRow(
                                 title = "Enterprise AI & RAG Solutions",
-                                subtitle = "Sub-500ms Groq LPUs, vector databases & chatbots",
+                                subtitle = "Enterprise LLMs, vector databases & chatbots",
                                 icon = Icons.Outlined.SmartToy,
                                 iconColor = Color(0xFF0284C7),
                                 onClick = {

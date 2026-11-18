@@ -1,0 +1,13 @@
+## ChittorTech Mobile App - Local Properties Template
+## Rename or copy this file to 'local.properties' and fill in your values.
+## IMPORTANT: Never commit actual passwords or keys to version control.
+
+# Location of the Android SDK
+sdk.dir=C\:\\Users\\YourUsername\\AppData\\Local\\Android\\Sdk
+
+# Release Signing Configuration (Optional for debug builds)
+# In CI/CD, set these as Environment Variables instead!
+RELEASE_STORE_FILE=chittortech_release_key.jks
+RELEASE_STORE_PASSWORD=your_keystore_password
+RELEASE_KEY_ALIAS=your_key_alias
+RELEASE_KEY_PASSWORD=your_key_password
