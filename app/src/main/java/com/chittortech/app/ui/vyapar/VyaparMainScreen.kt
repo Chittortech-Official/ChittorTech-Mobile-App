@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.flow.flowOf
 import com.chittortech.app.data.ChittorTechRepository
 import com.chittortech.app.model.AppNotification
 import com.chittortech.app.model.CtUser
@@ -48,10 +49,15 @@ fun VyaparMainScreen(
     val scope = rememberCoroutineScope()
     var currentTab by remember { mutableStateOf(VyaparTab.HOME) }
 
-    // Live streams from Firebase Firestore
-    val invoices by repository.observeAllInvoices().collectAsStateWithLifecycle(initialValue = emptyList())
-    val clients by repository.observeAllClients().collectAsStateWithLifecycle(initialValue = emptyList())
-    val notifications by repository.observeNotifications().collectAsStateWithLifecycle(initialValue = emptyList())
+    // Live streams from Firebase Firestore — skip for guest/demo users to avoid permission errors
+    val isGuestUser = user.uid.startsWith("guest_") || user.uid.startsWith("demo_") || user.email == "guest@chittortech.in"
+
+    val invoices by (if (isGuestUser) flowOf(emptyList()) else repository.observeAllInvoices())
+        .collectAsStateWithLifecycle(initialValue = emptyList())
+    val clients by (if (isGuestUser) flowOf(emptyList()) else repository.observeAllClients())
+        .collectAsStateWithLifecycle(initialValue = emptyList())
+    val notifications by (if (isGuestUser) flowOf(emptyList()) else repository.observeNotifications())
+        .collectAsStateWithLifecycle(initialValue = emptyList())
 
     // Dialog & Notification Read States
     var showNotificationsDialog by remember { mutableStateOf(false) }
@@ -222,7 +228,7 @@ fun VyaparMainScreen(
                             NotificationCardItem(
                                 title = notif.title,
                                 time = notif.timestamp?.toDate()?.let { d ->
-                                    java.text.SimpleDateFormat("dd MMM, hh:mm a", java.util.Locale.getDefault()).format(d)
+                                    java.text.SimpleDateFormat("dd-MM-yyyy, hh:mm a", java.util.Locale.getDefault()).format(d)
                                 } ?: "Just now",
                                 detail = notif.message,
                                 isUnread = isUnread,

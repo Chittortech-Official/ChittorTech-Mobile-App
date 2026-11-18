@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chittortech.app.data.ChittorTechRepository
+import com.chittortech.app.data.FcmNotificationManager
 import com.chittortech.app.data.OtpAuthService
 import com.chittortech.app.data.SessionManager
 import com.chittortech.app.data.SessionValidationResult
@@ -57,10 +58,16 @@ fun MainNavigation(
                 }
                 is SessionValidationResult.Valid -> {
                     isLoadingUser = true
-                    val user = repository.getCurrentUser() ?: repository.getUserByEmail(sessionResult.email)
+                    val fetchedUser = repository.getCurrentUser()
+                    val user = if (fetchedUser != null && fetchedUser.companyName.isNotBlank()) {
+                        fetchedUser
+                    } else {
+                        repository.getUserByEmail(sessionResult.email) ?: fetchedUser
+                    }
                     if (user != null) {
                         currentUser = user
                         SessionManager.updateLastActive(context)
+                        FcmNotificationManager.subscribeToUserTopics(sessionResult.email, sessionResult.role)
                     } else {
                         SessionManager.clearSession(context)
                         repository.signOut()
@@ -89,13 +96,14 @@ fun MainNavigation(
         }
     }
 
+    // State key includes currentUser and isLoadingUser so AnimatedContent re-renders on login/logout
     AnimatedContent(
-        targetState = showSplash to hasCompletedOnboarding,
+        targetState = Triple(showSplash, hasCompletedOnboarding, currentUser?.uid to isLoadingUser),
         transitionSpec = {
             fadeIn(animationSpec = tween(400)) togetherWith fadeOut(animationSpec = tween(400))
         },
         label = "SplashAndOnboardingTransition"
-    ) { (isSplash, isBoarded) ->
+    ) { (isSplash, isBoarded, _) ->
         if (isSplash) {
             ChittorTechSplashScreen(
                 onSplashFinished = { showSplash = false }
@@ -183,13 +191,17 @@ fun MainNavigation(
                                         SessionManager.clearSession(context)
                                         return@launch
                                     }
-                                    val user = repository.getCurrentUser() ?: repository.getUserByEmail(email)
-                                    val finalUser = user ?: CtUser(
-                                        uid = email.trim().lowercase(),
-                                        email = email,
-                                        displayName = email.substringBefore("@"),
-                                        role = assignedRole
-                                    )
+                                    val fetchedUser = repository.getCurrentUser()
+                                    val finalUser = if (fetchedUser != null && fetchedUser.companyName.isNotBlank()) {
+                                        fetchedUser
+                                    } else {
+                                        repository.getUserByEmail(email) ?: fetchedUser ?: CtUser(
+                                            uid = email.trim().lowercase(),
+                                            email = email,
+                                            displayName = email.substringBefore("@"),
+                                            role = assignedRole
+                                        )
+                                    }
                                     if (assignedRole.equals("client", ignoreCase = true)) {
                                         SessionManager.saveSession(context, email, "client")
                                     }
